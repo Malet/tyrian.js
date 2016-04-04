@@ -1,0 +1,25 @@
+.scene {
+  background: black;
+  background-image: url(../images/stars.png);
+  background-repeat: repeat;
+  cursor: none;
+  position: relative;
+}
+
+.ship {
+  background: url(../images/ships/USP_Fang.gif) no-repeat;
+  width: 18px;
+  height: 25px;
+  position: absolute;
+  bottom: 0;
+  left: 0;
+}
+
+.bullet {
+  width: 6px;
+  position: absolute;
+  height: 20px;
+  bottom: 25px;
+  left: 0;
+  background-color: red;
+}
