@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "start": "beefy main.js"
+    "start": "./node_modules/.bin/watchify main.jsx -v -o static/main.js -t [babelify --presets es2015,react]"
   },
   "repository": {
     "type": "git",
@@ -22,8 +22,15 @@
     "url": "https://github.com/Malet/tyrian.js/issues"
   },
   "homepage": "https://github.com/Malet/tyrian.js#readme",
-  "dependencies": {
-    "beefy": "^2.1.6",
+  "dependencies": {},
+  "devDependencies": {
+    "babel-preset-es2015": "^6.6.0",
+    "babel-preset-react": "^6.5.0",
+    "babelify": "^7.2.0",
+    "classnames": "^2.2.3",
+    "mousetrap": "^1.5.3",
+    "react": "^0.14.8",
+    "react-dom": "^0.14.8",
     "watchify": "^3.7.0"
   }
 }
