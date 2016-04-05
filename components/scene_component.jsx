@@ -18,7 +18,6 @@ module.exports = class SceneComponent extends React.Component {
     };
     this.ticker = setInterval(
       _ => {
-        this._fireBullet();
         this._propelBullets();
       },
       1000 / 60
@@ -44,6 +43,8 @@ module.exports = class SceneComponent extends React.Component {
       this.setState({ shipPositionX: shipPosition });
     });
 
+    Mousetrap.bind('space', _ => this._fireBullet())
+
     $(document).click(this._fireBullet.bind(this));
   }
 
@@ -53,12 +54,6 @@ module.exports = class SceneComponent extends React.Component {
         return <BulletComponent x={bullet.x} y={bullet.y} key={bullet.key}/>
       })}
       <ShipComponent x={this.state.shipPositionX}/>
-      <div className="text">
-        Bullets fired: <strong>{this.state.bulletCounter}</strong>
-      </div>
-      <div className="text">
-        Elements on screen: <strong>{this.state.bullets.length}</strong>
-      </div>
     </div>;
   }
 
@@ -83,7 +78,7 @@ module.exports = class SceneComponent extends React.Component {
   _propelBullets() {
     this.setState({
       bullets: this.state.bullets.map(bullet => {
-        bullet.y += 2;
+        bullet.y += 10;
         return bullet;
       }).filter(bullet => bullet.y < this.props.height)
     });
