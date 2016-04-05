@@ -52,6 +52,14 @@ module.exports = class SceneComponent extends React.Component {
       500
     );
 
+    this.levelEnder = setTimeout(
+      _ => {
+        clearTimeout(this.enemySpawner);
+        alert(`You scored ${this.state.points} points`);
+      },
+      30 * 1000
+    )
+
     this.ticker = setInterval(
       _ => {
         this._propelBullets();
