@@ -10,7 +10,7 @@
   cursor: none;
   position: relative;
   overflow: hidden;
-  animation: animatedBackground 40s linear infinite;
+  animation: animatedBackground 30s linear infinite;
 }
 
 .ship {
