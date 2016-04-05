@@ -11,6 +11,8 @@
   position: relative;
   overflow: hidden;
   animation: animatedBackground 30s linear infinite;
+  image-rendering: pixelated;
+  zoom: 2;
 }
 
 .ship {
