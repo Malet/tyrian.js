@@ -45,7 +45,13 @@ module.exports = class SceneComponent extends React.Component {
 
     $(document).click(this._fireBullet.bind(this));
 
-    this._spawnEnemy();
+    this.enemySpawner = setInterval(
+      _ => {
+        this._spawnEnemy(Math.random() * this.props.width);
+      },
+      500
+    );
+
     this.ticker = setInterval(
       _ => {
         this._propelBullets();
@@ -79,8 +85,9 @@ module.exports = class SceneComponent extends React.Component {
       key: key,
       x: this.state.shipPositionX + (this.shipWidth / 2),
       y: this.shipHeight,
-      width: 6,
-      height: 20
+      width: 11,
+      height: 25,
+      speed: 5
     };
 
     // Center the bullet from the ship
@@ -92,16 +99,17 @@ module.exports = class SceneComponent extends React.Component {
     });
   }
 
-  _spawnEnemy() {
+  _spawnEnemy(x) {
     let key = this.state.enemyCounter;
     this.setState({
       enemies: this.state.enemies.concat({
         key: key,
-        x: this.props.width / 2,
+        x: x,
         y: this.props.height,
-        width: 30,
-        height: 30,
-        points: 100
+        width: 22,
+        height: 25,
+        points: 100,
+        speed: 1
       }),
       enemyCounter: key + 1
     });
@@ -151,7 +159,7 @@ module.exports = class SceneComponent extends React.Component {
   _propelEnemies() {
     this.setState({
       enemies: this.state.enemies.map(enemy => {
-        enemy.y -= 2;
+        enemy.y -= enemy.speed;
         return enemy;
       }).filter(enemy => enemy.y > (0 - enemy.height))
     });
@@ -160,7 +168,7 @@ module.exports = class SceneComponent extends React.Component {
   _propelBullets() {
     this.setState({
       bullets: this.state.bullets.map(bullet => {
-        bullet.y += 10;
+        bullet.y += bullet.speed;
         return bullet;
       }).filter(bullet => bullet.y < this.props.height)
     });
