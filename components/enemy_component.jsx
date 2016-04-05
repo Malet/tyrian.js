@@ -1,13 +1,13 @@
 let React = require('react');
 let classnames = require('classnames');
 
-module.exports = class BulletComponent extends React.Component {
+module.exports = class EnemyComponent extends React.Component {
   constructor(props) {
     super(props);
   }
 
   render() {
-    return <div className="bullet" style={this._position()}></div>;
+    return <div className="enemy" style={this._position()}></div>;
   }
 
   _position() {
@@ -16,6 +16,6 @@ module.exports = class BulletComponent extends React.Component {
       bottom: this.props.y,
       width: this.props.width,
       height: this.props.height
-    }
+    };
   }
 };

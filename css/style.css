@@ -17,14 +17,17 @@
 }
 
 .bullet {
-  width: 6px;
   position: absolute;
-  height: 20px;
-  bottom: 0;
-  left: 0;
-  background-color: red;
+  background-color: rgba(255,0,0,0.5);
 }
 
 .text {
   color: white;
+  font-family: monospace;
+  padding: 0.1em 0.3em;
+}
+
+.enemy {
+  position: absolute;
+  background-color: #7c7c7c;
 }
