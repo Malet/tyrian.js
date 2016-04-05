@@ -45,29 +45,23 @@ module.exports = class SceneComponent extends React.Component {
 
     $(document).click(this._fireBullet.bind(this));
 
-    this.enemySpawner = setInterval(
-      _ => {
-        this._spawnEnemy(Math.random() * this.props.width);
-      },
-      500
-    );
-
-    this.levelEnder = setTimeout(
-      _ => {
-        clearTimeout(this.enemySpawner);
-        alert(`You scored ${this.state.points} points`);
-      },
-      30 * 1000
-    )
-
-    this.ticker = setInterval(
-      _ => {
+    this.tick = 0;
+    this.ticker = (elapsedTime) => {
+      if (this.tick === (60 * 30)) {
+        alert(`You scored ${this.state.points} points. GAME OVER`);
+      } else {
+        requestAnimationFrame(this.ticker);
+        this.tick += 1;
         this._propelBullets();
         this._propelEnemies();
         this._checkBulletCollisions();
-      },
-      1000 / 60
-    );
+        if (this.tick % 30 == 0) {
+          this._spawnEnemy(Math.random() * this.props.width);
+        }
+      }
+    };
+
+    this.ticker();
   }
 
   render() {
