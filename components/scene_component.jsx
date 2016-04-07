@@ -36,26 +36,33 @@ module.exports = class SceneComponent extends React.Component {
     let offset = $(domNode).offset();
 
     $(document).mousemove(mouseEvent => {
-      let x = Math.round(mouseEvent.pageX - offset.left);
-      let y = this.props.height - Math.round(mouseEvent.pageY - offset.top);
-      let shipPositionX = Math.max(
-        0,
-        Math.min(x, this.props.width - this.shipWidth)
-      );
+      var x, y;
+      if (document.pointerLockElement) {
+        x = this.state.shipPositionX + mouseEvent.movementX;
+        y = this.state.shipPositionY - mouseEvent.movementY;
+      } else {
+        x = Math.round(mouseEvent.pageX - offset.left);
+        y = this.props.height - Math.round(mouseEvent.pageY - offset.top);
+      }
 
-      let shipPositionY = Math.max(
-        0,
-        Math.min(y, this.props.height - this.shipHeight)
-      );
       this.setState({
-        shipPositionX: shipPositionX,
-        shipPositionY: shipPositionY
+        shipPositionX: Math.max(
+          0,
+          Math.min(x, this.props.width - this.shipWidth)
+        ),
+        shipPositionY: Math.max(
+          0,
+          Math.min(y, this.props.height - this.shipHeight)
+        )
       });
     });
 
     Mousetrap.bind('space', _ => this._fireBullet())
 
-    $(document).click(this._fireBullet.bind(this));
+    $(document).click(_ => {
+      this._enablePointerLock();
+      this._fireBullet();
+    });
 
     this.tick = 0;
     this.ticker = (elapsedTime) => {
@@ -188,5 +195,13 @@ module.exports = class SceneComponent extends React.Component {
         return bullet;
       }).filter(bullet => bullet.y < this.props.height)
     });
+  }
+
+  _enablePointerLock() {
+    if (!document.pointerLockElement) {
+      let el = ReactDOM.findDOMNode(this);
+      el.requestPointerLock = el.requestPointerLock || el.mozRequestPointerLock;
+      el.requestPointerLock();
+    }
   }
 };
