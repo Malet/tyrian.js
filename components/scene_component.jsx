@@ -147,13 +147,7 @@ module.exports = class SceneComponent extends React.Component {
       this.state.bullets.forEach(bullet => {
         if (collision) { return; }
 
-        collision = this._overlapping(
-          [bullet.x, bullet.x + bullet.width],
-          [enemy.x, enemy.x + enemy.width]
-        ) && this._overlapping(
-          [bullet.y, bullet.y + bullet.height],
-          [enemy.y, enemy.y + enemy.height]
-        );
+        collision = this._collided(bullet, enemy);
 
         if (collision) {
           // Add to removal list
@@ -174,6 +168,16 @@ module.exports = class SceneComponent extends React.Component {
       bullets: this.state.bullets.filter(bullet => bulletRemovalList.indexOf(bullet.key) === -1),
       points: Number(this.state.points) + points
     })
+  }
+
+  _collided(obj1, obj2) {
+    return this._overlapping(
+      [obj1.x, obj1.x + obj1.width],
+      [obj2.x, obj2.x + obj2.width]
+    ) && this._overlapping(
+      [obj1.y, obj1.y + obj1.height],
+      [obj2.y, obj2.y + obj2.height]
+    );
   }
 
   _overlapping(x1, x2) {
