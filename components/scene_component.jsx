@@ -34,18 +34,37 @@ module.exports = class SceneComponent extends React.Component {
     };
   }
 
+  _pointerLocked(e) {
+    return !!(document.pointerLockElement || document.mozPointerLockElement);
+  }
+
+  _getPointerMovement(e) {
+    if (e.movementX !== undefined) {
+      return {
+        movementX: e.movementX,
+        movementY: e.movementY
+      }
+    } else {
+      return {
+        movementX: e.mozMovementX,
+        movementY: e.mozMovementY
+      }
+    }
+  }
+
   componentDidMount() {
     let domNode = ReactDOM.findDOMNode(this);
     let offset = $(domNode).offset();
 
-    $(document).on('mousemove.game', mouseEvent => {
+    $(document).on('mousemove.game', e => {
       var x, y;
-      if (document.pointerLockElement) {
-        x = this.state.ship.x + mouseEvent.movementX;
-        y = this.state.ship.y - mouseEvent.movementY;
+      if (this._pointerLocked(e)) {
+        let m = this._getPointerMovement(e)
+        x = this.state.ship.x + m.movementX;
+        y = this.state.ship.y - m.movementY;
       } else {
-        x = Math.round(mouseEvent.pageX - offset.left);
-        y = this.props.height - Math.round(mouseEvent.pageY - offset.top);
+        x = Math.round(e.pageX - offset.left);
+        y = this.props.height - Math.round(e.pageY - offset.top);
       }
 
       let ship = Object.assign(

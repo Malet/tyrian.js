@@ -11,6 +11,10 @@
   overflow: hidden;
   animation: animatedBackground 30s linear infinite;
   image-rendering: pixelated;
+  transform: scale(2);
+  transform-origin: top left;
+
+  -webkit-transform: none;
   zoom: 2;
 }
 
