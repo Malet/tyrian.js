@@ -17,11 +17,14 @@ module.exports = class SceneComponent extends React.Component {
       x: 0,
       y: 0,
       width: 18,
-      height: 25
+      height: 25,
+      armor: 100,
+      destroyedOn: null
     };
     ship.x = (this.props.width / 2) - (ship.width / 2);
 
     this.state = {
+      levelEndedOn: null,
       ship: ship,
       bullets: [],
       enemies: [],
@@ -35,7 +38,7 @@ module.exports = class SceneComponent extends React.Component {
     let domNode = ReactDOM.findDOMNode(this);
     let offset = $(domNode).offset();
 
-    $(document).mousemove(mouseEvent => {
+    $(document).on('mousemove.game', mouseEvent => {
       var x, y;
       if (document.pointerLockElement) {
         x = this.state.ship.x + mouseEvent.movementX;
@@ -53,21 +56,22 @@ module.exports = class SceneComponent extends React.Component {
         }
       );
 
-      this.setState({ ship: ship
-      });
+      this.setState({ ship: ship });
     });
 
     Mousetrap.bind('space', _ => this._fireBullet())
 
-    $(document).click(_ => {
+    let clickHandler = $(document).on('click.game', _ => {
       this._enablePointerLock();
       this._fireBullet();
     });
 
     this.tick = 0;
     this.ticker = (elapsedTime) => {
-      if (this.tick === (60 * 30)) {
-        alert(`You scored ${this.state.points} points. GAME OVER`);
+      if (this.state.levelEndedOn) {
+        // Deregister any click handlers etc
+        $(document).off('click.game');
+        $(document).off('mousemove.game');
       } else {
         requestAnimationFrame(this.ticker);
         this.tick += 1;
@@ -84,18 +88,29 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   render() {
+    let gameOver = <div className="gameover">
+      <h1>GAME OVER</h1>
+      <p>Your score was {this.state.points}</p>
+    </div>;
+
+    let bullets = this.state.bullets.map(bullet => {
+      return <BulletComponent x={bullet.x} y={bullet.y} height={bullet.height} width={bullet.width} key={bullet.key}/>
+    });
+
+    let enemies = this.state.enemies.map(enemy => {
+      return <EnemyComponent x={enemy.x} y={enemy.y} width={enemy.width} height={enemy.height} key={enemy.key}/>
+    });
+
     return <div style={{
       width: this.props.width,
       height: this.props.height
-    }} className={classnames({scene: true})}>
+    }} className={classnames({ scene: true, 'scene-gameover': !!this.state.ship.destroyedOn })}>
       <div className="text">POINTS <strong>{this.state.points}</strong></div>
-      {this.state.bullets.map(bullet => {
-        return <BulletComponent x={bullet.x} y={bullet.y} height={bullet.height} width={bullet.width} key={bullet.key}/>
-      })}
-      {this.state.enemies.map(enemy => {
-        return <EnemyComponent x={enemy.x} y={enemy.y} width={enemy.width} height={enemy.height} key={enemy.key}/>
-      })}
+      <div className="text">ARMOR <strong>{this.state.ship.armor}</strong></div>
+      {bullets}
+      {enemies}
       <ShipComponent ship={this.state.ship}/>
+      {gameOver}
     </div>;
   }
 
@@ -132,7 +147,8 @@ module.exports = class SceneComponent extends React.Component {
         width: 22,
         height: 25,
         points: 100,
-        speed: 1
+        speed: 1,
+        collisionDamage: 1
       }),
       enemyCounter: key + 1
     });
@@ -141,8 +157,28 @@ module.exports = class SceneComponent extends React.Component {
   _checkCollisions() {
     let enemyRemovalList = [];
     let bulletRemovalList = [];
+    var levelEndedOn = null;
+
+    // Use local object, we only want one setState for this entire call
+    let ship = this.state.ship;
+
     this.state.enemies.forEach(enemy => {
       let collision = false;
+      // Check if an collided with the ship
+      if (this._collided(enemy, this.state.ship)) {
+        // Damage ship
+        let newArmor = Math.max(0, ship.armor - enemy.collisionDamage);
+        ship.armor = newArmor;
+        if (ship.armor === 0) {
+          // Use this tick to set a slight delay on the respawn, or game over.
+          ship.destroyedOn = this.tick;
+          levelEndedOn = this.tick;
+        }
+
+        // TODO: Repel ship
+      }
+
+      // Check if a friendly bullet has hit an enemy
       this.state.bullets.forEach(bullet => {
         if (collision) { return; }
 
@@ -165,8 +201,10 @@ module.exports = class SceneComponent extends React.Component {
     this.setState({
       enemies: this.state.enemies.filter(enemy => enemyRemovalList.indexOf(enemy.key) === -1),
       bullets: this.state.bullets.filter(bullet => bulletRemovalList.indexOf(bullet.key) === -1),
-      points: Number(this.state.points) + points
-    })
+      points: Number(this.state.points) + points,
+      ship: ship,
+      levelEndedOn: levelEndedOn
+    });
   }
 
   _collided(obj1, obj2) {
