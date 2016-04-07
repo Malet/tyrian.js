@@ -6,9 +6,11 @@ let ShipComponent = require('./ship_component.jsx');
 let BulletComponent = require('./bullet_component.jsx');
 let EnemyComponent = require('./enemy_component.jsx');
 let $ = require('zepto-browserify').Zepto;
+let laserSound = new Audio('/sounds/effects/laser.mp3');
 
 module.exports = class SceneComponent extends React.Component {
   constructor(props) {
+    navigator.pointer = navigator.pointer || navigator.webkitPointer;
     super(props);
 
     this.shipWidth = 18;
@@ -20,6 +22,7 @@ module.exports = class SceneComponent extends React.Component {
 
     this.state = {
       shipPositionX: (this.props.width / 2) - (this.shipWidth / 2),
+      shipPositionY: 0,
       bullets: [],
       enemies: [],
       bulletCounter: 0,
@@ -34,11 +37,20 @@ module.exports = class SceneComponent extends React.Component {
 
     $(document).mousemove(mouseEvent => {
       let x = Math.round(mouseEvent.pageX - offset.left);
-      let shipPosition = Math.max(
+      let y = Math.round(mouseEvent.pageY - offset.top);
+      let shipPositionX = Math.max(
         0,
         Math.min(x, this.props.width - this.shipWidth)
       );
-      this.setState({ shipPositionX: shipPosition });
+
+      let shipPositionY = Math.max(
+        0,
+        Math.min(y, this.props.height)
+      );
+      this.setState({
+        shipPositionX: shipPositionX,
+        shipPositionY: this.props.height - shipPositionY
+      });
     });
 
     Mousetrap.bind('space', _ => this._fireBullet())
@@ -73,7 +85,7 @@ module.exports = class SceneComponent extends React.Component {
       {this.state.enemies.map(enemy => {
         return <EnemyComponent x={enemy.x} y={enemy.y} width={enemy.width} height={enemy.height} key={enemy.key}/>
       })}
-      <ShipComponent x={this.state.shipPositionX}/>
+      <ShipComponent x={this.state.shipPositionX} y={this.state.shipPositionY} width={this.shipWidth} height={this.shipHeight}/>
     </div>;
   }
 
@@ -87,8 +99,8 @@ module.exports = class SceneComponent extends React.Component {
       key: key,
       x: this.state.shipPositionX + (this.shipWidth / 2),
       y: this.shipHeight,
-      width: 11,
-      height: 25,
+      width: 9,
+      height: 23,
       speed: 5
     };
 
@@ -99,6 +111,8 @@ module.exports = class SceneComponent extends React.Component {
       bullets: this.state.bullets.concat(bullet),
       bulletCounter: key + 1
     });
+
+    laserSound.cloneNode().play();
   }
 
   _spawnEnemy(x) {
