@@ -12,10 +12,10 @@ module.exports = class ShipComponent extends React.Component {
 
   _position() {
     return {
-      left: this.props.x,
-      bottom: this.props.y,
-      width: this.props.width,
-      height: this.props.height
+      left: this.props.ship.x,
+      bottom: this.props.ship.y,
+      width: this.props.ship.width,
+      height: this.props.ship.height
     }
   }
 };

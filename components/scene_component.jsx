@@ -13,16 +13,16 @@ module.exports = class SceneComponent extends React.Component {
     navigator.pointer = navigator.pointer || navigator.webkitPointer;
     super(props);
 
-    this.shipWidth = 18;
-    this.shipHeight = 25;
-    this.sizing = {
-      width: this.props.width,
-      height: this.props.height
+    let ship = {
+      x: 0,
+      y: 0,
+      width: 18,
+      height: 25
     };
+    ship.x = (this.props.width / 2) - (ship.width / 2);
 
     this.state = {
-      shipPositionX: (this.props.width / 2) - (this.shipWidth / 2),
-      shipPositionY: 0,
+      ship: ship,
       bullets: [],
       enemies: [],
       bulletCounter: 0,
@@ -38,22 +38,22 @@ module.exports = class SceneComponent extends React.Component {
     $(document).mousemove(mouseEvent => {
       var x, y;
       if (document.pointerLockElement) {
-        x = this.state.shipPositionX + mouseEvent.movementX;
-        y = this.state.shipPositionY - mouseEvent.movementY;
+        x = this.state.ship.x + mouseEvent.movementX;
+        y = this.state.ship.y - mouseEvent.movementY;
       } else {
         x = Math.round(mouseEvent.pageX - offset.left);
         y = this.props.height - Math.round(mouseEvent.pageY - offset.top);
       }
 
-      this.setState({
-        shipPositionX: Math.max(
-          0,
-          Math.min(x, this.props.width - this.shipWidth)
-        ),
-        shipPositionY: Math.max(
-          0,
-          Math.min(y, this.props.height - this.shipHeight)
-        )
+      let ship = Object.assign(
+        this.state.ship,
+        {
+          x: Math.max(0, Math.min(x, this.props.width - this.state.ship.width)),
+          y: Math.max(0, Math.min(y, this.props.height - this.state.ship.height))
+        }
+      );
+
+      this.setState({ ship: ship
       });
     });
 
@@ -73,7 +73,7 @@ module.exports = class SceneComponent extends React.Component {
         this.tick += 1;
         this._propelBullets();
         this._propelEnemies();
-        this._checkBulletCollisions();
+        this._checkCollisions();
         if (this.tick % 30 == 0) {
           this._spawnEnemy(Math.random() * this.props.width);
         }
@@ -84,7 +84,10 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   render() {
-    return <div style={this.sizing} className={classnames({scene: true})}>
+    return <div style={{
+      width: this.props.width,
+      height: this.props.height
+    }} className={classnames({scene: true})}>
       <div className="text">POINTS <strong>{this.state.points}</strong></div>
       {this.state.bullets.map(bullet => {
         return <BulletComponent x={bullet.x} y={bullet.y} height={bullet.height} width={bullet.width} key={bullet.key}/>
@@ -92,20 +95,16 @@ module.exports = class SceneComponent extends React.Component {
       {this.state.enemies.map(enemy => {
         return <EnemyComponent x={enemy.x} y={enemy.y} width={enemy.width} height={enemy.height} key={enemy.key}/>
       })}
-      <ShipComponent x={this.state.shipPositionX} y={this.state.shipPositionY} width={this.shipWidth} height={this.shipHeight}/>
+      <ShipComponent ship={this.state.ship}/>
     </div>;
-  }
-
-  _moveShip(by) {
-    this.setState({shipPositionX: this.state.shipPositionX + (by * 5)});
   }
 
   _fireBullet(clickEvent) {
     let key = this.state.bulletCounter;
     let bullet = {
       key: key,
-      x: this.state.shipPositionX + (this.shipWidth / 2),
-      y: this.state.shipPositionY + this.shipHeight,
+      x: this.state.ship.x + (this.state.ship.width / 2),
+      y: this.state.ship.y + this.state.ship.height,
       width: 9,
       height: 23,
       speed: 5
@@ -139,7 +138,7 @@ module.exports = class SceneComponent extends React.Component {
     });
   }
 
-  _checkBulletCollisions() {
+  _checkCollisions() {
     let enemyRemovalList = [];
     let bulletRemovalList = [];
     this.state.enemies.forEach(enemy => {
