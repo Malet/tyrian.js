@@ -37,7 +37,7 @@ module.exports = class SceneComponent extends React.Component {
 
     $(document).mousemove(mouseEvent => {
       let x = Math.round(mouseEvent.pageX - offset.left);
-      let y = Math.round(mouseEvent.pageY - offset.top);
+      let y = this.props.height - Math.round(mouseEvent.pageY - offset.top);
       let shipPositionX = Math.max(
         0,
         Math.min(x, this.props.width - this.shipWidth)
@@ -45,11 +45,11 @@ module.exports = class SceneComponent extends React.Component {
 
       let shipPositionY = Math.max(
         0,
-        Math.min(y, this.props.height)
+        Math.min(y, this.props.height - this.shipHeight)
       );
       this.setState({
         shipPositionX: shipPositionX,
-        shipPositionY: this.props.height - shipPositionY
+        shipPositionY: shipPositionY
       });
     });
 
