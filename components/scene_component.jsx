@@ -105,7 +105,7 @@ module.exports = class SceneComponent extends React.Component {
     let bullet = {
       key: key,
       x: this.state.shipPositionX + (this.shipWidth / 2),
-      y: this.shipHeight,
+      y: this.state.shipPositionY + this.shipHeight,
       width: 9,
       height: 23,
       speed: 5
@@ -113,6 +113,7 @@ module.exports = class SceneComponent extends React.Component {
 
     // Center the bullet from the ship
     bullet.x -= Math.round(bullet.width / 2);
+    bullet.y -= bullet.height;
 
     this.setState({
       bullets: this.state.bullets.concat(bullet),
