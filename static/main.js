@@ -309,7 +309,7 @@ module.exports = function (_React$Component) {
         height: 7,
         points: 0,
         speed: 1,
-        collisionDamage: 1,
+        collisionDamage: 5,
         bullet: true,
         image: 'images/bullets/enemy_bullet.gif',
         tick: function tick(bullet) {
@@ -381,6 +381,10 @@ module.exports = function (_React$Component) {
         var collision = false;
         // Check if an collided with the ship
         if (_this4._collided(enemy, _this4.state.ship)) {
+          if (enemy.bullet) {
+            // Bullets are removed on collision
+            enemyRemovalList.push(enemy.key);
+          }
           // Damage ship
           var newArmor = Math.max(0, ship.armor - enemy.collisionDamage);
           ship.armor = newArmor;
@@ -399,12 +403,14 @@ module.exports = function (_React$Component) {
             return;
           }
 
-          collision = _this4._collided(bullet, enemy);
+          if (enemy.bullet !== true) {
+            collision = _this4._collided(bullet, enemy);
 
-          if (collision) {
-            // Add to removal list
-            enemyRemovalList.push(enemy.key);
-            bulletRemovalList.push(bullet.key);
+            if (collision) {
+              // Add to removal list
+              enemyRemovalList.push(enemy.key);
+              bulletRemovalList.push(bullet.key);
+            }
           }
         });
       });

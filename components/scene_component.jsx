@@ -166,7 +166,7 @@ module.exports = class SceneComponent extends React.Component {
       height: 7,
       points: 0,
       speed: 1,
-      collisionDamage: 1,
+      collisionDamage: 5,
       bullet: true,
       image: 'images/bullets/enemy_bullet.gif',
       tick: (bullet) => {
@@ -237,6 +237,9 @@ module.exports = class SceneComponent extends React.Component {
       let collision = false;
       // Check if an collided with the ship
       if (this._collided(enemy, this.state.ship)) {
+        if (enemy.bullet) { // Bullets are removed on collision
+          enemyRemovalList.push(enemy.key);
+        }
         // Damage ship
         let newArmor = Math.max(0, ship.armor - enemy.collisionDamage);
         ship.armor = newArmor;
@@ -253,12 +256,14 @@ module.exports = class SceneComponent extends React.Component {
       this.state.bullets.forEach(bullet => {
         if (collision) { return; }
 
-        collision = this._collided(bullet, enemy);
+        if (enemy.bullet !== true) {
+          collision = this._collided(bullet, enemy);
 
-        if (collision) {
-          // Add to removal list
-          enemyRemovalList.push(enemy.key);
-          bulletRemovalList.push(bullet.key);
+          if (collision) {
+            // Add to removal list
+            enemyRemovalList.push(enemy.key);
+            bulletRemovalList.push(bullet.key);
+          }
         }
       });
     });

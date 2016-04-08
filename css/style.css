@@ -3,6 +3,10 @@
   to { background-position: 0 100%; }
 }
 
+body {
+  font-family: sans-serif;
+}
+
 .scene {
   background: black;
   background-image: url(../images/stars.png);
