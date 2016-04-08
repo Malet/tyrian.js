@@ -5,6 +5,7 @@ let Mousetrap = require('mousetrap');
 let ShipComponent = require('./ship_component.jsx');
 let BulletComponent = require('./bullet_component.jsx');
 let EnemyComponent = require('./enemy_component.jsx');
+let EffectComponent = require('./effect_component.jsx');
 let $ = require('zepto-browserify').Zepto;
 let laserSound = new Audio('sounds/effects/laser.mp3');
 
@@ -24,13 +25,16 @@ module.exports = class SceneComponent extends React.Component {
     ship.x = (this.props.width / 2) - (ship.width / 2);
 
     this.newEnemies = [];
+    this.newEffects = [];
     this.state = {
       levelEndedOn: null,
       ship: ship,
       bullets: [],
       enemies: [],
+      effects: [],
       bulletSeq: 0,
       enemySeq: 0,
+      effectsSeq: 0,
       points: 0
     };
   }
@@ -98,6 +102,7 @@ module.exports = class SceneComponent extends React.Component {
         this._propelBullets();
         this._propelEnemies();
         this._checkCollisions();
+        this._removeOldEffects();
         if (this.tick % 30 == 0) {
           this._spawnEnemy(Math.random() * this.props.width);
         }
@@ -121,15 +126,20 @@ module.exports = class SceneComponent extends React.Component {
       return <EnemyComponent attrs={enemy} key={enemy.key}/>
     });
 
+    let effects = this.state.effects.map(effect => {
+      return <EffectComponent attrs={effect} key={effect.key}/>
+    });
+
     return <div style={{
-      width: this.props.width,
-      height: this.props.height
+      width: `${this.props.width}px`,
+      height: `${this.props.height}px`
     }} className={classnames({ scene: true, 'scene-gameover': !!this.state.ship.destroyedOn })}>
       <div className="text">POINTS <strong>{this.state.points}</strong></div>
       <div className="text">ARMOR <strong>{this.state.ship.armor}</strong></div>
       {bullets}
       {enemies}
       <ShipComponent ship={this.state.ship}/>
+      {effects}
       {gameOver}
     </div>;
   }
@@ -192,6 +202,19 @@ module.exports = class SceneComponent extends React.Component {
     return bullet;
   }
 
+  _spawnExplosion(x, y) {
+    return {
+      key: this.state.effectsSeq++,
+      x: x,
+      y: y,
+      width: 13,
+      height: 12,
+      image: 'images/effects/small_explosion.gif',
+      spawnedOn: this.tick,
+      ttl: 38
+    }
+  }
+
   _spawnEnemy(x) {
     let key = this.state.enemySeq;
     this.setState({
@@ -239,6 +262,12 @@ module.exports = class SceneComponent extends React.Component {
       if (this._collided(enemy, this.state.ship)) {
         if (enemy.bullet) { // Bullets are removed on collision
           enemyRemovalList.push(enemy.key);
+          this.newEffects.push(
+            this._spawnExplosion(
+              enemy.x,
+              enemy.y
+            )
+          );
         }
         // Damage ship
         let newArmor = Math.max(0, ship.armor - enemy.collisionDamage);
@@ -261,6 +290,12 @@ module.exports = class SceneComponent extends React.Component {
 
           if (collision) {
             // Add to removal list
+            this.newEffects.push(
+              this._spawnExplosion(
+                bullet.x + (bullet.width / 2),
+                bullet.y + bullet.height
+              )
+            );
             enemyRemovalList.push(enemy.key);
             bulletRemovalList.push(bullet.key);
           }
@@ -280,6 +315,14 @@ module.exports = class SceneComponent extends React.Component {
       points: Number(this.state.points) + points,
       ship: ship,
       levelEndedOn: levelEndedOn
+    });
+  }
+
+  _removeOldEffects() {
+    this.setState({
+      effects: this.state.effects.filter(effect => {
+        return effect.spawnedOn + effect.ttl > this.tick;
+      })
     });
   }
 
@@ -304,11 +347,14 @@ module.exports = class SceneComponent extends React.Component {
 
     this.setState({
       enemies: enemies.concat(this.newEnemies),
-      enemySeq: this.state.enemySeq
+      enemySeq: this.state.enemySeq,
+      effects: this.state.effects.concat(this.newEffects),
+      effectsSeq: this.state.effectsSeq
     });
 
     // Reset for next tick
     this.newEnemies = [];
+    this.newEffects = [];
   }
 
   _propelBullets() {

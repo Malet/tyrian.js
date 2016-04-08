@@ -70,3 +70,8 @@ body {
   position: absolute;
   transform: rotate(180deg);
 }
+
+.effect {
+  position: absolute;
+  background-color: red;
+}

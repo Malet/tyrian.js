@@ -29,8 +29,8 @@
     "babelify": "^7.2.0",
     "classnames": "^2.2.3",
     "mousetrap": "^1.5.3",
-    "react": "^0.14.8",
-    "react-dom": "^0.14.8",
+    "react": "^15.0",
+    "react-dom": "^15.0",
     "watchify": "^3.7.0",
     "zepto-browserify": "^1.1.6-1"
   }
