@@ -6,7 +6,7 @@ let ShipComponent = require('./ship_component.jsx');
 let BulletComponent = require('./bullet_component.jsx');
 let EnemyComponent = require('./enemy_component.jsx');
 let $ = require('zepto-browserify').Zepto;
-let laserSound = new Audio('/sounds/effects/laser.mp3');
+let laserSound = new Audio('sounds/effects/laser.mp3');
 
 module.exports = class SceneComponent extends React.Component {
   constructor(props) {
@@ -168,7 +168,7 @@ module.exports = class SceneComponent extends React.Component {
       speed: 1,
       collisionDamage: 1,
       bullet: true,
-      image: '../images/bullets/enemy_bullet.gif',
+      image: 'images/bullets/enemy_bullet.gif',
       tick: (bullet) => {
         bullet.y += bullet.normalVector.y;
         bullet.x += bullet.normalVector.x;
@@ -204,7 +204,7 @@ module.exports = class SceneComponent extends React.Component {
         points: 100,
         speed: 0.5,
         collisionDamage: 1,
-        image: '../images/ships/Gencore_Phoenix.gif',
+        image: 'images/ships/Gencore_Phoenix.gif',
         tick: (enemy) => {
           enemy.y -= enemy.speed;
           enemy.x += Math.sin(enemy.y / 20) * enemy.speed;
