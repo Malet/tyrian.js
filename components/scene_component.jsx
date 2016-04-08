@@ -23,13 +23,14 @@ module.exports = class SceneComponent extends React.Component {
     };
     ship.x = (this.props.width / 2) - (ship.width / 2);
 
+    this.newEnemies = [];
     this.state = {
       levelEndedOn: null,
       ship: ship,
       bullets: [],
       enemies: [],
-      bulletCounter: 0,
-      enemyCounter: 0,
+      bulletSeq: 0,
+      enemySeq: 0,
       points: 0
     };
   }
@@ -117,7 +118,7 @@ module.exports = class SceneComponent extends React.Component {
     });
 
     let enemies = this.state.enemies.map(enemy => {
-      return <EnemyComponent x={enemy.x} y={enemy.y} width={enemy.width} height={enemy.height} key={enemy.key}/>
+      return <EnemyComponent attrs={enemy} key={enemy.key}/>
     });
 
     return <div style={{
@@ -134,7 +135,7 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   _fireBullet(clickEvent) {
-    let key = this.state.bulletCounter;
+    let key = this.state.bulletSeq;
     let bullet = {
       key: key,
       x: this.state.ship.x + (this.state.ship.width / 2),
@@ -150,14 +151,49 @@ module.exports = class SceneComponent extends React.Component {
 
     this.setState({
       bullets: this.state.bullets.concat(bullet),
-      bulletCounter: key + 1
+      bulletSeq: key + 1
     });
 
     laserSound.cloneNode().play();
   }
 
+  _spawnEnemyBullet(x, y) {
+    let bullet = {
+      key: this.state.enemySeq++,
+      x: x,
+      y: y,
+      width: 7,
+      height: 7,
+      points: 0,
+      speed: 1,
+      collisionDamage: 1,
+      bullet: true,
+      image: '../images/bullets/enemy_bullet.gif',
+      tick: (bullet) => {
+        bullet.y += bullet.normalVector.y;
+        bullet.x += bullet.normalVector.x;
+
+        return bullet;
+      }
+    };
+
+    let target = { x: this.state.ship.x, y: this.state.ship.y };
+    let initial = { x: x, y: y };
+    let vector = {
+      x: target.x - initial.x,
+      y: target.y - initial.y
+    };
+    let distance = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2));
+    bullet.normalVector = {
+      x: vector.x / distance * bullet.speed,
+      y: vector.y / distance * bullet.speed
+    };
+
+    return bullet;
+  }
+
   _spawnEnemy(x) {
-    let key = this.state.enemyCounter;
+    let key = this.state.enemySeq;
     this.setState({
       enemies: this.state.enemies.concat({
         key: key,
@@ -166,10 +202,26 @@ module.exports = class SceneComponent extends React.Component {
         width: 22,
         height: 25,
         points: 100,
-        speed: 1,
-        collisionDamage: 1
+        speed: 0.5,
+        collisionDamage: 1,
+        image: '../images/ships/Gencore_Phoenix.gif',
+        tick: (enemy) => {
+          enemy.y -= enemy.speed;
+          enemy.x += Math.sin(enemy.y / 20) * enemy.speed;
+
+          if(this.tick % 120 === 0) {
+            this.newEnemies.push(
+              this._spawnEnemyBullet(
+                enemy.x + ( enemy.width / 2 ),
+                enemy.y + 7
+              )
+            );
+          }
+
+          return enemy;
+        }
       }),
-      enemyCounter: key + 1
+      enemySeq: key + 1
     });
   }
 
@@ -241,12 +293,17 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   _propelEnemies() {
+    let enemies = this.state.enemies
+      .map(enemy => enemy.tick(enemy))
+      .filter(enemy => enemy.y > (0 - enemy.height));
+
     this.setState({
-      enemies: this.state.enemies.map(enemy => {
-        enemy.y -= enemy.speed;
-        return enemy;
-      }).filter(enemy => enemy.y > (0 - enemy.height))
+      enemies: enemies.concat(this.newEnemies),
+      enemySeq: this.state.enemySeq
     });
+
+    // Reset for next tick
+    this.newEnemies = [];
   }
 
   _propelBullets() {

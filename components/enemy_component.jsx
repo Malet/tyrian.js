@@ -12,10 +12,11 @@ module.exports = class EnemyComponent extends React.Component {
 
   _position() {
     return {
-      left: this.props.x,
-      bottom: this.props.y,
-      width: this.props.width,
-      height: this.props.height
+      left: this.props.attrs.x,
+      bottom: Math.round(this.props.attrs.y),
+      width: this.props.attrs.width,
+      height: this.props.attrs.height,
+      background: `url(${this.props.attrs.image}) no-repeat`
     };
   }
 };
