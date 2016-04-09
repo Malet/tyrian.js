@@ -23,6 +23,7 @@ module.exports = class SceneComponent extends React.Component {
       destroyedOn: null
     };
     ship.x = (this.props.width / 2) - (ship.width / 2);
+    this.pointer = { x: ship.x, y: ship.y };
     this.state = {
       levelEndedOn: null,
       ship: ship,
@@ -70,15 +71,10 @@ module.exports = class SceneComponent extends React.Component {
         y = this.props.height - Math.round(e.pageY - offset.top);
       }
 
-      let ship = Object.assign(
-        this.state.ship,
-        {
-          x: Math.max(0, Math.min(x, this.props.width - this.state.ship.width)),
-          y: Math.max(0, Math.min(y, this.props.height - this.state.ship.height))
-        }
-      );
-
-      this.setState({ ship: ship });
+      this.pointer = {
+        x: Math.max(0, Math.min(x, this.props.width - this.state.ship.width)),
+        y: Math.max(0, Math.min(y, this.props.height - this.state.ship.height))
+      };
     });
 
     Mousetrap.bind('space', _ => this._fireBullet())
@@ -90,6 +86,11 @@ module.exports = class SceneComponent extends React.Component {
 
     this.tick = 0;
     this._tick();
+  }
+
+  _updateShipPosition(state) {
+    state.ship = Object.assign(state.ship, this.pointer);
+    return state;
   }
 
   _tick(elapsedTime) {
@@ -107,7 +108,9 @@ module.exports = class SceneComponent extends React.Component {
           this._checkCollisions(
             this._removeOutOfBounds(
               this._propelEnemies(
-                this._propelBullets(this.state)
+                this._propelBullets(
+                  this._updateShipPosition(this.state)
+                )
               )
             )
           )

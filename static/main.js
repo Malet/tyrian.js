@@ -169,6 +169,7 @@ module.exports = function (_React$Component) {
       destroyedOn: null
     };
     ship.x = _this.props.width / 2 - ship.width / 2;
+    _this.pointer = { x: ship.x, y: ship.y };
     _this.state = {
       levelEndedOn: null,
       ship: ship,
@@ -223,12 +224,10 @@ module.exports = function (_React$Component) {
           y = _this2.props.height - Math.round(e.pageY - offset.top);
         }
 
-        var ship = Object.assign(_this2.state.ship, {
+        _this2.pointer = {
           x: Math.max(0, Math.min(x, _this2.props.width - _this2.state.ship.width)),
           y: Math.max(0, Math.min(y, _this2.props.height - _this2.state.ship.height))
-        });
-
-        _this2.setState({ ship: ship });
+        };
       });
 
       Mousetrap.bind('space', function (_) {
@@ -244,6 +243,12 @@ module.exports = function (_React$Component) {
       this._tick();
     }
   }, {
+    key: '_updateShipPosition',
+    value: function _updateShipPosition(state) {
+      state.ship = Object.assign(state.ship, this.pointer);
+      return state;
+    }
+  }, {
     key: '_tick',
     value: function _tick(elapsedTime) {
       if (this.state.levelEndedOn) {
@@ -255,7 +260,7 @@ module.exports = function (_React$Component) {
         var tickKey = 'stateTick ' + this.tick;
         console.time(tickKey);
 
-        var state = this._spawnEnemies(this._removeOldEffects(this._checkCollisions(this._removeOutOfBounds(this._propelEnemies(this._propelBullets(this.state))))));
+        var state = this._spawnEnemies(this._removeOldEffects(this._checkCollisions(this._removeOutOfBounds(this._propelEnemies(this._propelBullets(this._updateShipPosition(this.state)))))));
 
         console.timeEnd(tickKey);
 
