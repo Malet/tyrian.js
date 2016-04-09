@@ -330,7 +330,10 @@ module.exports = class SceneComponent extends React.Component {
           );
         }
         // Damage ship
-        let newArmor = Math.max(0, state.ship.armor - enemy.collisionDamage);
+        let newArmor = state.godMode ?
+          state.ship.armor :
+          Math.max(0, state.ship.armor - enemy.collisionDamage);
+
         state.ship.armor = newArmor;
         if (state.ship.armor === 0) {
           // Use this tick to set a slight delay on the respawn, or game over.
