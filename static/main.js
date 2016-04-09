@@ -166,10 +166,16 @@ module.exports = function (_React$Component) {
       width: 18,
       height: 25,
       armor: 100,
-      destroyedOn: null
+      destroyedOn: null,
+      gun: {
+        firing: false,
+        firingInterval: 7,
+        lastFired: 0
+      }
     };
     ship.x = _this.props.width / 2 - ship.width / 2;
     _this.pointer = { x: ship.x, y: ship.y };
+    _this.firing = false;
     _this.state = {
       levelEndedOn: null,
       ship: ship,
@@ -230,17 +236,45 @@ module.exports = function (_React$Component) {
         };
       });
 
-      Mousetrap.bind('space', function (_) {
-        return _this2._fireBullet();
+      // Keyboard firing
+      $(document).on('keydown.space', function (e) {
+        if (e.keyCode == 32) {
+          _this2.firing = true;
+        }
+      });
+      $(document).on('keyup.space', function (e) {
+        if (e.keyCode == 32) {
+          _this2.firing = false;
+        }
+      });
+
+      // Mouse firing
+      $(document).on('mousedown.fire', function (e) {
+        _this2.firing = true;
+      });
+      $(document).on('mouseup.fire', function (e) {
+        _this2.firing = false;
       });
 
       var clickHandler = $(document).on('click.game', function (_) {
         _this2._enablePointerLock();
-        _this2._fireBullet();
       });
 
       this.tick = 0;
       this._tick();
+    }
+  }, {
+    key: '_fireGun',
+    value: function _fireGun(state) {
+      state.ship.gun.firing = this.firing;
+      var shouldFire = state.ship.gun.firing && this.tick >= state.ship.gun.lastFired + state.ship.gun.firingInterval;
+
+      if (shouldFire) {
+        state = this._fireBullet(state);
+        state.ship.gun.lastFired = this.tick;
+      }
+
+      return state;
     }
   }, {
     key: '_updateShipPosition',
@@ -255,12 +289,16 @@ module.exports = function (_React$Component) {
         // Deregister any click handlers etc
         $(document).off('click.game');
         $(document).off('mousemove.game');
+        $(document).off('keydown.space');
+        $(document).off('keyup.space');
+        $(document).off('mousedown.fire');
+        $(document).off('mouseup.fire');
       } else {
         this.tick += 1;
         var tickKey = 'stateTick ' + this.tick;
         console.time(tickKey);
 
-        var state = this._spawnEnemies(this._removeOldEffects(this._checkCollisions(this._removeOutOfBounds(this._propelEnemies(this._propelBullets(this._updateShipPosition(this.state)))))));
+        var state = this._spawnEnemies(this._removeOldEffects(this._checkCollisions(this._removeOutOfBounds(this._propelEnemies(this._propelBullets(this._fireGun(this._updateShipPosition(this.state))))))));
 
         console.timeEnd(tickKey);
 
@@ -343,12 +381,11 @@ module.exports = function (_React$Component) {
     }
   }, {
     key: '_fireBullet',
-    value: function _fireBullet(clickEvent) {
-      var key = this.state.bulletSeq;
+    value: function _fireBullet(state) {
       var bullet = {
-        key: key,
-        x: this.state.ship.x + this.state.ship.width / 2,
-        y: this.state.ship.y + this.state.ship.height,
+        key: state.bulletSeq,
+        x: state.ship.x + state.ship.width / 2,
+        y: state.ship.y + state.ship.height,
         width: 9,
         height: 23,
         speed: 5
@@ -358,12 +395,11 @@ module.exports = function (_React$Component) {
       bullet.x -= Math.round(bullet.width / 2);
       bullet.y -= bullet.height;
 
-      this.setState({
-        bullets: this.state.bullets.concat(bullet),
-        bulletSeq: key + 1
-      });
-
+      state.bullets.push(bullet);
+      state.bulletSeq += 1;
       laserSound.cloneNode().play();
+
+      return state;
     }
   }, {
     key: '_spawnEnemyBullet',

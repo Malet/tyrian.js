@@ -20,10 +20,16 @@ module.exports = class SceneComponent extends React.Component {
       width: 18,
       height: 25,
       armor: 100,
-      destroyedOn: null
+      destroyedOn: null,
+      gun: {
+        firing: false,
+        firingInterval: 7,
+        lastFired: 0
+      }
     };
     ship.x = (this.props.width / 2) - (ship.width / 2);
     this.pointer = { x: ship.x, y: ship.y };
+    this.firing = false;
     this.state = {
       levelEndedOn: null,
       ship: ship,
@@ -77,15 +83,41 @@ module.exports = class SceneComponent extends React.Component {
       };
     });
 
-    Mousetrap.bind('space', _ => this._fireBullet())
+    // Keyboard firing
+    $(document).on('keydown.space', e => {
+      if (e.keyCode == 32) { this.firing = true; }
+    });
+    $(document).on('keyup.space', e => {
+      if (e.keyCode == 32) { this.firing = false; }
+    });
+
+    // Mouse firing
+    $(document).on('mousedown.fire', e => {
+      this.firing = true;
+    });
+    $(document).on('mouseup.fire', e => {
+      this.firing = false;
+    });
 
     let clickHandler = $(document).on('click.game', _ => {
       this._enablePointerLock();
-      this._fireBullet();
     });
 
     this.tick = 0;
     this._tick();
+  }
+
+  _fireGun(state) {
+    state.ship.gun.firing = this.firing;
+    let shouldFire = state.ship.gun.firing &&
+      (this.tick >= (state.ship.gun.lastFired + state.ship.gun.firingInterval));
+
+    if (shouldFire) {
+      state = this._fireBullet(state);
+      state.ship.gun.lastFired = this.tick;
+    }
+
+    return state;
   }
 
   _updateShipPosition(state) {
@@ -98,6 +130,10 @@ module.exports = class SceneComponent extends React.Component {
       // Deregister any click handlers etc
       $(document).off('click.game');
       $(document).off('mousemove.game');
+      $(document).off('keydown.space');
+      $(document).off('keyup.space');
+      $(document).off('mousedown.fire');
+      $(document).off('mouseup.fire');
     } else {
       this.tick += 1;
       let tickKey = `stateTick ${this.tick}`;
@@ -109,7 +145,9 @@ module.exports = class SceneComponent extends React.Component {
             this._removeOutOfBounds(
               this._propelEnemies(
                 this._propelBullets(
-                  this._updateShipPosition(this.state)
+                  this._fireGun(
+                    this._updateShipPosition(this.state)
+                  )
                 )
               )
             )
@@ -165,12 +203,11 @@ module.exports = class SceneComponent extends React.Component {
     </div>;
   }
 
-  _fireBullet(clickEvent) {
-    let key = this.state.bulletSeq;
+  _fireBullet(state) {
     let bullet = {
-      key: key,
-      x: this.state.ship.x + (this.state.ship.width / 2),
-      y: this.state.ship.y + this.state.ship.height,
+      key: state.bulletSeq,
+      x: state.ship.x + (state.ship.width / 2),
+      y: state.ship.y + state.ship.height,
       width: 9,
       height: 23,
       speed: 5
@@ -180,12 +217,11 @@ module.exports = class SceneComponent extends React.Component {
     bullet.x -= Math.round(bullet.width / 2);
     bullet.y -= bullet.height;
 
-    this.setState({
-      bullets: this.state.bullets.concat(bullet),
-      bulletSeq: key + 1
-    });
-
+    state.bullets.push(bullet);
+    state.bulletSeq += 1;
     laserSound.cloneNode().play();
+
+    return state;
   }
 
   _spawnEnemyBullet(x, y, state) {
