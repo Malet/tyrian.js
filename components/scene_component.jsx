@@ -210,7 +210,8 @@ module.exports = class SceneComponent extends React.Component {
       y: state.ship.y + state.ship.height,
       width: 9,
       height: 23,
-      speed: 5
+      speed: 5,
+      damage: 5
     };
 
     // Center the bullet from the ship
@@ -289,6 +290,7 @@ module.exports = class SceneComponent extends React.Component {
       points: 100,
       speed: 0.5,
       collisionDamage: 1,
+      health: 10,
       image: 'images/ships/Gencore_Phoenix.gif',
       tick: (enemy, state) => {
         enemy.y -= enemy.speed;
@@ -357,7 +359,11 @@ module.exports = class SceneComponent extends React.Component {
                 );
               }
             );
-            enemyRemovalList.push(enemy);
+            if ((enemy.health -= bullet.damage) <= 0) {
+              enemyRemovalList.push(enemy);
+            } else {
+              state.enemies[state.enemies.indexOf(enemy)] = enemy;
+            }
             bulletRemovalList.push(bullet);
           }
         }
