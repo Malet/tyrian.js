@@ -282,6 +282,7 @@ module.exports = class SceneComponent extends React.Component {
 
   _spawnEnemy(x, state) {
     let newEnemy = {
+      sinOffset: Math.random() * Math.PI * 2,
       key: state.enemySeq,
       x: x,
       y: this.props.height,
@@ -294,7 +295,7 @@ module.exports = class SceneComponent extends React.Component {
       image: 'images/ships/Gencore_Phoenix.gif',
       tick: (enemy, state) => {
         enemy.y -= enemy.speed;
-        enemy.x += Math.sin(enemy.y / 20) * enemy.speed;
+        enemy.x += Math.sin((enemy.y / 20) + enemy.sinOffset) * enemy.speed;
         state.enemies[state.enemies.indexOf(enemy)] = enemy;
 
         if((this.tick + enemy.key) % 120 === 0) {
