@@ -417,10 +417,10 @@ module.exports = class SceneComponent extends React.Component {
 
   _removeOutOfBounds(state) {
     state.enemies = state.enemies.filter(enemy => {
-      let outOfX = (enemy.x > this.props.width) ||
-        ((enemy.x - enemy.width) < 0);
-      let outOfY = (enemy.y > this.props.height) ||
-        ((enemy.y + enemy.height) < 0);
+      let outOfX = (enemy.x > (this.props.width + state.cullMargin)) ||
+        ((enemy.x + enemy.width + state.cullMargin) < 0);
+      let outOfY = (enemy.y > (this.props.height + state.cullMargin)) ||
+        ((enemy.y + enemy.height + state.cullMargin) < 0);
 
       return !(outOfX || outOfY);
     });
