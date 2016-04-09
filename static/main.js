@@ -480,7 +480,7 @@ module.exports = function (_React$Component) {
           if (state.ship.armor === 0) {
             // Use this tick to set a slight delay on the respawn, or game over.
             state.ship.destroyedOn = _this4.tick;
-            levelEndedOn = _this4.tick;
+            state.levelEndedOn = _this4.tick;
           }
 
           // TODO: Repel ship

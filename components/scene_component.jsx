@@ -297,7 +297,7 @@ module.exports = class SceneComponent extends React.Component {
         if (state.ship.armor === 0) {
           // Use this tick to set a slight delay on the respawn, or game over.
           state.ship.destroyedOn = this.tick;
-          levelEndedOn = this.tick;
+          state.levelEndedOn = this.tick;
         }
 
         // TODO: Repel ship
