@@ -23,9 +23,6 @@ module.exports = class SceneComponent extends React.Component {
       destroyedOn: null
     };
     ship.x = (this.props.width / 2) - (ship.width / 2);
-
-    this.newEnemies = [];
-    this.newEffects = [];
     this.state = {
       levelEndedOn: null,
       ship: ship,
@@ -35,7 +32,8 @@ module.exports = class SceneComponent extends React.Component {
       bulletSeq: 0,
       enemySeq: 0,
       effectsSeq: 0,
-      points: 0
+      points: 0,
+      cullMargin: 10
     };
   }
 
@@ -91,25 +89,45 @@ module.exports = class SceneComponent extends React.Component {
     });
 
     this.tick = 0;
-    this.ticker = (elapsedTime) => {
-      if (this.state.levelEndedOn) {
-        // Deregister any click handlers etc
-        $(document).off('click.game');
-        $(document).off('mousemove.game');
-      } else {
-        requestAnimationFrame(this.ticker);
-        this.tick += 1;
-        this._propelBullets();
-        this._propelEnemies();
-        this._checkCollisions();
-        this._removeOldEffects();
-        if (this.tick % 30 == 0) {
-          this._spawnEnemy(Math.random() * this.props.width);
-        }
-      }
-    };
+    this._tick();
+  }
 
-    this.ticker();
+  _tick(elapsedTime) {
+    if (this.state.levelEndedOn) {
+      // Deregister any click handlers etc
+      $(document).off('click.game');
+      $(document).off('mousemove.game');
+    } else {
+      this.tick += 1;
+      let tickKey = `stateTick ${this.tick}`;
+      console.time(tickKey);
+
+      let state = this._spawnEnemies(
+        this._removeOldEffects(
+          this._checkCollisions(
+            this._removeOutOfBounds(
+              this._propelEnemies(
+                this._propelBullets(this.state)
+              )
+            )
+          )
+        )
+      );
+
+      console.timeEnd(tickKey);
+
+      let reactTickKey = `reactTick ${this.tick}`;
+      console.time(reactTickKey);
+      this.setState(state);
+      console.timeEnd(reactTickKey);
+      requestAnimationFrame(this._tick.bind(this));
+    }
+  }
+
+  _spawnEnemies(state) {
+    if (this.tick % 30 == 0)
+      return this._spawnEnemy(Math.random() * this.props.width, state);
+    return state;
   }
 
   render() {
@@ -167,9 +185,9 @@ module.exports = class SceneComponent extends React.Component {
     laserSound.cloneNode().play();
   }
 
-  _spawnEnemyBullet(x, y) {
+  _spawnEnemyBullet(x, y, state) {
     let bullet = {
-      key: this.state.enemySeq++,
+      key: state.enemySeq++,
       x: x,
       y: y,
       width: 7,
@@ -179,15 +197,17 @@ module.exports = class SceneComponent extends React.Component {
       collisionDamage: 5,
       bullet: true,
       image: 'images/bullets/enemy_bullet.gif',
-      tick: (bullet) => {
+      tick: (bullet, state) => {
         bullet.y += bullet.normalVector.y;
         bullet.x += bullet.normalVector.x;
 
-        return bullet;
+        state.enemies[state.enemies.indexOf(bullet)] = bullet;
+
+        return state;
       }
     };
 
-    let target = { x: this.state.ship.x, y: this.state.ship.y };
+    let target = { x: state.ship.x, y: state.ship.y };
     let initial = { x: x, y: y };
     let vector = {
       x: target.x - initial.x,
@@ -199,12 +219,13 @@ module.exports = class SceneComponent extends React.Component {
       y: vector.y / distance * bullet.speed
     };
 
-    return bullet;
+    state.enemies.push(bullet);
+    return state;
   }
 
-  _spawnExplosion(x, y) {
-    return {
-      key: this.state.effectsSeq++,
+  _spawnExplosion(x, y, state) {
+    let newExplosion = {
+      key: state.effectsSeq,
       x: x,
       y: y,
       width: 13,
@@ -212,69 +233,67 @@ module.exports = class SceneComponent extends React.Component {
       image: 'images/effects/small_explosion.gif',
       spawnedOn: this.tick,
       ttl: 38
-    }
+    };
+
+    state.effects.push(newExplosion);
+    state.effectsSeq += 1;
+    return state;
   }
 
-  _spawnEnemy(x) {
-    let key = this.state.enemySeq;
-    this.setState({
-      enemies: this.state.enemies.concat({
-        key: key,
-        x: x,
-        y: this.props.height,
-        width: 22,
-        height: 25,
-        points: 100,
-        speed: 0.5,
-        collisionDamage: 1,
-        image: 'images/ships/Gencore_Phoenix.gif',
-        tick: (enemy) => {
-          enemy.y -= enemy.speed;
-          enemy.x += Math.sin(enemy.y / 20) * enemy.speed;
+  _spawnEnemy(x, state) {
+    let newEnemy = {
+      key: state.enemySeq,
+      x: x,
+      y: this.props.height,
+      width: 22,
+      height: 25,
+      points: 100,
+      speed: 0.5,
+      collisionDamage: 1,
+      image: 'images/ships/Gencore_Phoenix.gif',
+      tick: (enemy, state) => {
+        enemy.y -= enemy.speed;
+        enemy.x += Math.sin(enemy.y / 20) * enemy.speed;
+        state.enemies[state.enemies.indexOf(enemy)] = enemy;
 
-          if(this.tick % 120 === 0) {
-            this.newEnemies.push(
-              this._spawnEnemyBullet(
-                enemy.x + ( enemy.width / 2 ),
-                enemy.y + 7
-              )
-            );
-          }
-
-          return enemy;
+        if((this.tick + enemy.key) % 120 === 0) {
+          state = this._spawnEnemyBullet(
+            enemy.x + ( enemy.width / 2 ),
+            enemy.y + 7,
+            state
+          );
         }
-      }),
-      enemySeq: key + 1
-    });
+        return state;
+      }
+    };
+    state.enemies.push(newEnemy);
+    state.enemySeq += 1;
+    return state;
   }
 
-  _checkCollisions() {
+  _checkCollisions(state) {
     let enemyRemovalList = [];
     let bulletRemovalList = [];
+    let newEffects = [];
     var levelEndedOn = null;
 
     // Use local object, we only want one setState for this entire call
-    let ship = this.state.ship;
-
-    this.state.enemies.forEach(enemy => {
+    state.enemies.forEach(enemy => {
       let collision = false;
       // Check if an collided with the ship
-      if (this._collided(enemy, this.state.ship)) {
+      if (this._collided(enemy, state.ship)) {
         if (enemy.bullet) { // Bullets are removed on collision
-          enemyRemovalList.push(enemy.key);
-          this.newEffects.push(
-            this._spawnExplosion(
-              enemy.x,
-              enemy.y
-            )
+          enemyRemovalList.push(enemy);
+          newEffects.push(
+            state => this._spawnExplosion(enemy.x, enemy.y, state)
           );
         }
         // Damage ship
-        let newArmor = Math.max(0, ship.armor - enemy.collisionDamage);
-        ship.armor = newArmor;
-        if (ship.armor === 0) {
+        let newArmor = Math.max(0, state.ship.armor - enemy.collisionDamage);
+        state.ship.armor = newArmor;
+        if (state.ship.armor === 0) {
           // Use this tick to set a slight delay on the respawn, or game over.
-          ship.destroyedOn = this.tick;
+          state.ship.destroyedOn = this.tick;
           levelEndedOn = this.tick;
         }
 
@@ -282,7 +301,7 @@ module.exports = class SceneComponent extends React.Component {
       }
 
       // Check if a friendly bullet has hit an enemy
-      this.state.bullets.forEach(bullet => {
+      state.bullets.forEach(bullet => {
         if (collision) { return; }
 
         if (enemy.bullet !== true) {
@@ -290,40 +309,38 @@ module.exports = class SceneComponent extends React.Component {
 
           if (collision) {
             // Add to removal list
-            this.newEffects.push(
-              this._spawnExplosion(
-                bullet.x + (bullet.width / 2),
-                bullet.y + bullet.height
-              )
+            newEffects.push(
+              state => {
+                return this._spawnExplosion(
+                  bullet.x + (bullet.width / 2),
+                  bullet.y + bullet.height,
+                  state
+                );
+              }
             );
-            enemyRemovalList.push(enemy.key);
-            bulletRemovalList.push(bullet.key);
+            enemyRemovalList.push(enemy);
+            bulletRemovalList.push(bullet);
           }
         }
       });
     });
 
     // Add side-effects for removed enemies/bullets (explosions|powerups)
-    let points = enemyRemovalList.map(key => {
-      return this.state.enemies.find(e => key === e.key).points;
-    })
-    .reduce(((a, i) => Number(a) + Number(i)), 0);
+    state.points += enemyRemovalList
+      .map(enemy => enemy.points)
+      .reduce(((total, points) => Number(total) + Number(points)), 0);
+    state.enemies = state.enemies
+      .filter(enemy => enemyRemovalList.indexOf(enemy) === -1);
+    state.bullets = state.bullets
+      .filter(bullet => bulletRemovalList.indexOf(bullet) === -1);
+    newEffects.forEach(effect => state = effect(state));
 
-    this.setState({
-      enemies: this.state.enemies.filter(enemy => enemyRemovalList.indexOf(enemy.key) === -1),
-      bullets: this.state.bullets.filter(bullet => bulletRemovalList.indexOf(bullet.key) === -1),
-      points: Number(this.state.points) + points,
-      ship: ship,
-      levelEndedOn: levelEndedOn
-    });
+    return state;
   }
 
-  _removeOldEffects() {
-    this.setState({
-      effects: this.state.effects.filter(effect => {
-        return effect.spawnedOn + effect.ttl > this.tick;
-      })
-    });
+  _removeOldEffects(state) {
+    state.effects = state.effects.filter(effect => (effect.spawnedOn + effect.ttl) > this.tick);
+    return state;
   }
 
   _collided(obj1, obj2) {
@@ -340,30 +357,36 @@ module.exports = class SceneComponent extends React.Component {
     return x1[0] < x2[1] && x1[1] > x2[0];
   }
 
-  _propelEnemies() {
-    let enemies = this.state.enemies
-      .map(enemy => enemy.tick(enemy))
-      .filter(enemy => enemy.y > (0 - enemy.height));
-
-    this.setState({
-      enemies: enemies.concat(this.newEnemies),
-      enemySeq: this.state.enemySeq,
-      effects: this.state.effects.concat(this.newEffects),
-      effectsSeq: this.state.effectsSeq
-    });
-
-    // Reset for next tick
-    this.newEnemies = [];
-    this.newEffects = [];
+  _propelEnemies(state) {
+    return state.enemies.reduce(
+      (state, enemy) => {
+        return enemy.tick(enemy, state);
+      },
+      state
+    );
   }
 
-  _propelBullets() {
-    this.setState({
-      bullets: this.state.bullets.map(bullet => {
+  _removeOutOfBounds(state) {
+    state.enemies = state.enemies.filter(enemy => {
+      let outOfX = (enemy.x > this.props.width) ||
+        ((enemy.x - enemy.width) < 0);
+      let outOfY = (enemy.y > this.props.height) ||
+        ((enemy.y + enemy.height) < 0);
+
+      return !(outOfX || outOfY);
+    });
+    return state;
+  }
+
+  _propelBullets(state) {
+    let bullets = state.bullets
+      .map(bullet => {
         bullet.y += bullet.speed;
         return bullet;
-      }).filter(bullet => bullet.y < this.props.height)
-    });
+      })
+      .filter(bullet => bullet.y < this.props.height);
+
+    return Object.assign(state, { bullets: bullets });
   }
 
   _enablePointerLock() {
