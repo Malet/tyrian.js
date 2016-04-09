@@ -31,6 +31,7 @@ module.exports = class SceneComponent extends React.Component {
     this.pointer = { x: ship.x, y: ship.y };
     this.firing = false;
     this.state = {
+      godMode: false,
       levelEndedOn: null,
       ship: ship,
       bullets: [],

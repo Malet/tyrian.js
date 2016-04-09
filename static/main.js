@@ -177,6 +177,7 @@ module.exports = function (_React$Component) {
     _this.pointer = { x: ship.x, y: ship.y };
     _this.firing = false;
     _this.state = {
+      godMode: false,
       levelEndedOn: null,
       ship: ship,
       bullets: [],
@@ -465,6 +466,7 @@ module.exports = function (_React$Component) {
       var _this3 = this;
 
       var newEnemy = {
+        sinOffset: Math.random() * Math.PI * 2,
         key: state.enemySeq,
         x: x,
         y: this.props.height,
@@ -477,7 +479,7 @@ module.exports = function (_React$Component) {
         image: 'images/ships/Gencore_Phoenix.gif',
         tick: function tick(enemy, state) {
           enemy.y -= enemy.speed;
-          enemy.x += Math.sin(enemy.y / 20) * enemy.speed;
+          enemy.x += Math.sin(enemy.y / 20 + enemy.sinOffset) * enemy.speed;
           state.enemies[state.enemies.indexOf(enemy)] = enemy;
 
           if ((_this3.tick + enemy.key) % 120 === 0) {
@@ -513,7 +515,8 @@ module.exports = function (_React$Component) {
             });
           }
           // Damage ship
-          var newArmor = Math.max(0, state.ship.armor - enemy.collisionDamage);
+          var newArmor = state.godMode ? state.ship.armor : Math.max(0, state.ship.armor - enemy.collisionDamage);
+
           state.ship.armor = newArmor;
           if (state.ship.armor === 0) {
             // Use this tick to set a slight delay on the respawn, or game over.
@@ -600,8 +603,8 @@ module.exports = function (_React$Component) {
       var _this6 = this;
 
       state.enemies = state.enemies.filter(function (enemy) {
-        var outOfX = enemy.x > _this6.props.width || enemy.x - enemy.width < 0;
-        var outOfY = enemy.y > _this6.props.height || enemy.y + enemy.height < 0;
+        var outOfX = enemy.x > _this6.props.width + state.cullMargin || enemy.x + enemy.width + state.cullMargin < 0;
+        var outOfY = enemy.y > _this6.props.height + state.cullMargin || enemy.y + enemy.height + state.cullMargin < 0;
 
         return !(outOfX || outOfY);
       });
