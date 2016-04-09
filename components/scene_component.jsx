@@ -196,10 +196,10 @@ module.exports = class SceneComponent extends React.Component {
     }} className={classnames({ scene: true, 'scene-gameover': !!this.state.ship.destroyedOn })}>
       <div className="text">POINTS <strong>{this.state.points}</strong></div>
       <div className="text">ARMOR <strong>{this.state.ship.armor}</strong></div>
-      {bullets}
-      {enemies}
+      <div class="bulletsContainer">{bullets}</div>
+      <div class="enemiesContainer">{enemies}</div>
       <ShipComponent ship={this.state.ship}/>
-      {effects}
+      <div class="effectsContainer">{effects}</div>
       {gameOver}
     </div>;
   }
@@ -264,13 +264,13 @@ module.exports = class SceneComponent extends React.Component {
     return state;
   }
 
-  _spawnExplosion(x, y, state) {
+  _spawnExplosion(x, y, w, h, state) {
     let newExplosion = {
       key: state.effectsSeq,
       x: x,
       y: y,
-      width: 13,
-      height: 12,
+      width: w || 13,
+      height: h || 12,
       image: 'images/effects/small_explosion.gif',
       spawnedOn: this.tick,
       ttl: 38
@@ -328,7 +328,7 @@ module.exports = class SceneComponent extends React.Component {
         if (enemy.bullet) { // Bullets are removed on collision
           enemyRemovalList.push(enemy);
           newEffects.push(
-            state => this._spawnExplosion(enemy.x, enemy.y, state)
+            state => this._spawnExplosion(enemy.x, enemy.y, null, null, state)
           );
         }
         // Damage ship
@@ -360,11 +360,24 @@ module.exports = class SceneComponent extends React.Component {
                 return this._spawnExplosion(
                   bullet.x + (bullet.width / 2),
                   bullet.y + bullet.height,
+                  null,
+                  null,
                   state
                 );
               }
             );
             if ((enemy.health -= bullet.damage) <= 0) {
+              newEffects.push(
+                state => {
+                  return this._spawnExplosion(
+                    enemy.x,
+                    enemy.y,
+                    enemy.width,
+                    enemy.height,
+                    state
+                  );
+                }
+              );
               enemyRemovalList.push(enemy);
             } else {
               state.enemies[state.enemies.indexOf(enemy)] = enemy;

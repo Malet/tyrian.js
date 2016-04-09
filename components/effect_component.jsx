@@ -15,7 +15,8 @@ module.exports = class EnemyComponent extends React.Component {
       bottom: Math.round(this.props.attrs.y),
       width: this.props.attrs.width,
       height: this.props.attrs.height,
-      background: `url(${this.props.attrs.image}) no-repeat`
+      backgroundImage: `url(${this.props.attrs.image})`,
+      backgroundRepeat: 'no-repeat'
     };
   }
 };

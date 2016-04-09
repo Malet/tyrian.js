@@ -73,5 +73,5 @@ body {
 
 .effect {
   position: absolute;
-  background-color: red;
+  background-size: cover;
 }

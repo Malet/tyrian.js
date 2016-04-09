@@ -42,7 +42,7 @@ module.exports = function (_React$Component) {
 }(React.Component);
 
 },{"classnames":7,"react":173}],2:[function(require,module,exports){
-"use strict";
+'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
 
@@ -64,19 +64,20 @@ module.exports = function (_React$Component) {
   }
 
   _createClass(EnemyComponent, [{
-    key: "render",
+    key: 'render',
     value: function render() {
-      return React.createElement("div", { className: "effect", style: this._position() });
+      return React.createElement('div', { className: 'effect', style: this._position() });
     }
   }, {
-    key: "_position",
+    key: '_position',
     value: function _position() {
       return {
         left: this.props.attrs.x,
         bottom: Math.round(this.props.attrs.y),
         width: this.props.attrs.width,
         height: this.props.attrs.height,
-        background: "url(" + this.props.attrs.image + ") no-repeat"
+        backgroundImage: 'url(' + this.props.attrs.image + ')',
+        backgroundRepeat: 'no-repeat'
       };
     }
   }]);
@@ -373,10 +374,22 @@ module.exports = function (_React$Component) {
             this.state.ship.armor
           )
         ),
-        bullets,
-        enemies,
+        React.createElement(
+          'div',
+          { 'class': 'bulletsContainer' },
+          bullets
+        ),
+        React.createElement(
+          'div',
+          { 'class': 'enemiesContainer' },
+          enemies
+        ),
         React.createElement(ShipComponent, { ship: this.state.ship }),
-        effects,
+        React.createElement(
+          'div',
+          { 'class': 'effectsContainer' },
+          effects
+        ),
         gameOver
       );
     }
@@ -444,13 +457,13 @@ module.exports = function (_React$Component) {
     }
   }, {
     key: '_spawnExplosion',
-    value: function _spawnExplosion(x, y, state) {
+    value: function _spawnExplosion(x, y, w, h, state) {
       var newExplosion = {
         key: state.effectsSeq,
         x: x,
         y: y,
-        width: 13,
-        height: 12,
+        width: w || 13,
+        height: h || 12,
         image: 'images/effects/small_explosion.gif',
         spawnedOn: this.tick,
         ttl: 38
@@ -511,7 +524,7 @@ module.exports = function (_React$Component) {
             // Bullets are removed on collision
             enemyRemovalList.push(enemy);
             newEffects.push(function (state) {
-              return _this4._spawnExplosion(enemy.x, enemy.y, state);
+              return _this4._spawnExplosion(enemy.x, enemy.y, null, null, state);
             });
           }
           // Damage ship
@@ -539,9 +552,12 @@ module.exports = function (_React$Component) {
             if (collision) {
               // Add to removal list
               newEffects.push(function (state) {
-                return _this4._spawnExplosion(bullet.x + bullet.width / 2, bullet.y + bullet.height, state);
+                return _this4._spawnExplosion(bullet.x + bullet.width / 2, bullet.y + bullet.height, null, null, state);
               });
               if ((enemy.health -= bullet.damage) <= 0) {
+                newEffects.push(function (state) {
+                  return _this4._spawnExplosion(enemy.x, enemy.y, enemy.width, enemy.height, state);
+                });
                 enemyRemovalList.push(enemy);
               } else {
                 state.enemies[state.enemies.indexOf(enemy)] = enemy;
