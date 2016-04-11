@@ -6,8 +6,15 @@ let ShipComponent = require('./ship_component.jsx');
 let BulletComponent = require('./bullet_component.jsx');
 let EnemyComponent = require('./enemy_component.jsx');
 let EffectComponent = require('./effect_component.jsx');
-let $ = require('zepto-browserify').Zepto;
-let laserSound = new Audio('sounds/effects/laser.mp3');
+let $ = require('jquery-browserify');
+
+var laserSound, explodeSound, shipDamageSound;
+require('../sounds/loader')('sounds/effects/laser.mp3')
+.then(func => laserSound = func);
+require('../sounds/loader')('sounds/effects/explode.mp3')
+.then(func => explodeSound = func);
+require('../sounds/loader')('sounds/effects/shipDamage.mp3')
+.then(func => shipDamageSound = func);
 
 module.exports = class SceneComponent extends React.Component {
   constructor(props) {
@@ -74,7 +81,7 @@ module.exports = class SceneComponent extends React.Component {
     $(document).on('mousemove.game', e => {
       var x, y;
       if (this._pointerLocked(e)) {
-        let m = this._getPointerMovement(e)
+        let m = this._getPointerMovement(e.originalEvent);
         x = this.state.ship.x + m.movementX;
         y = this.state.ship.y - m.movementY;
       } else {
@@ -262,11 +269,11 @@ module.exports = class SceneComponent extends React.Component {
     })}>
       <div className="text points">{this.state.points}</div>
       <div className="text armor">ARMOR <strong>{this.state.ship.armor}</strong></div>
-      <canvas id="level" style={{ bottom: -this.state.level.progress }}></canvas>
-      <div class="bulletsContainer">{bullets}</div>
-      <div class="enemiesContainer">{enemies}</div>
+      <div className="bulletsContainer">{bullets}</div>
+      <div className="enemiesContainer">{enemies}</div>
       <ShipComponent ship={this.state.ship}/>
-      <div class="effectsContainer">{effects}</div>
+      <div className="effectsContainer">{effects}</div>
+      <canvas id="level" style={{ bottom: -this.state.level.progress }}></canvas>
       {gameOver}
       {levelComplete}
     </div>;
@@ -289,7 +296,7 @@ module.exports = class SceneComponent extends React.Component {
 
     state.bullets.push(bullet);
     state.bulletSeq += 1;
-    laserSound.cloneNode().play();
+    laserSound.play();
 
     return state;
   }
@@ -398,7 +405,9 @@ module.exports = class SceneComponent extends React.Component {
           newEffects.push(
             state => this._spawnExplosion(enemy.x, enemy.y, null, null, state)
           );
+          shipDamageSound.play();
         }
+
         // Damage ship
         let newArmor = state.godMode ?
           state.ship.armor :
@@ -450,6 +459,7 @@ module.exports = class SceneComponent extends React.Component {
             } else {
               state.enemies[state.enemies.indexOf(enemy)] = enemy;
             }
+            explodeSound.play();
             bulletRemovalList.push(bullet);
           }
         }
