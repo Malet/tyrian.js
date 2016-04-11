@@ -19,6 +19,7 @@ body {
   position: relative;
   overflow: hidden;
   animation: animatedBackground 30s linear infinite;
+  image-rendering: -moz-crisp-edges;
   image-rendering: pixelated;
   transform: scale(2);
   transform-origin: top left;
