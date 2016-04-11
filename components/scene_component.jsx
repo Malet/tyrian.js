@@ -41,7 +41,11 @@ module.exports = class SceneComponent extends React.Component {
       enemySeq: 0,
       effectsSeq: 0,
       points: 0,
-      cullMargin: 10
+      cullMargin: 10,
+      level: {
+        progress: 0,
+        complete: false
+      }
     };
   }
 
@@ -105,8 +109,50 @@ module.exports = class SceneComponent extends React.Component {
     });
 
     this.tick = 0;
+    this.level1();
     this._tick();
   }
+
+  level1() {
+    let levelData = require('../maps/level1');
+    let canvas = $('#level')[0];
+    let context = canvas.getContext('2d');
+    let tilesImage = $('#tiles1')[0];
+    var i = 0, j = 0;
+    // Resize the canvas to fit the new map
+    canvas.width = levelData.mapWidth * levelData.tileWidth;
+    canvas.height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
+
+    levelData.tiles.forEach(tileNum => {
+      tileNum -= 1; // Tiles counts from 1;
+      context.drawImage(
+        tilesImage,
+        (tileNum % levelData.spriteWidth) * levelData.tileWidth,
+        Math.floor(tileNum / levelData.spriteWidth) * levelData.tileHeight,
+        levelData.tileWidth,
+        levelData.tileHeight,
+        i * levelData.tileWidth,
+        j * levelData.tileHeight,
+        levelData.tileWidth,
+        levelData.tileHeight
+      );
+
+      if (i === levelData.mapWidth - 1) {
+        i = 0;
+        j += 1;
+      } else {
+        i += 1;
+      }
+    });
+
+    this.state.level = {
+      height: canvas.height,
+      width: canvas.width,
+      progress: 0,
+      complete: false,
+      finishOn: canvas.height - this.props.height
+    };
+  };
 
   _fireGun(state) {
     state.ship.gun.firing = this.firing;
@@ -126,8 +172,16 @@ module.exports = class SceneComponent extends React.Component {
     return state;
   }
 
+  _progressLevel(state) {
+    state.level.progress += 1;
+    if (state.level.progress >= state.level.finishOn) {
+      state.level.complete = true;
+    }
+    return state;
+  }
+
   _tick(elapsedTime) {
-    if (this.state.levelEndedOn) {
+    if (this.state.levelEndedOn || this.state.level.complete) {
       // Deregister any click handlers etc
       $(document).off('click.game');
       $(document).off('mousemove.game');
@@ -140,14 +194,16 @@ module.exports = class SceneComponent extends React.Component {
       let tickKey = `stateTick ${this.tick}`;
       console.time(tickKey);
 
-      let state = this._spawnEnemies(
-        this._removeOldEffects(
-          this._checkCollisions(
-            this._removeOutOfBounds(
-              this._propelEnemies(
-                this._propelBullets(
-                  this._fireGun(
-                    this._updateShipPosition(this.state)
+      let state = this._progressLevel(
+        this._spawnEnemies(
+          this._removeOldEffects(
+            this._checkCollisions(
+              this._removeOutOfBounds(
+                this._propelEnemies(
+                  this._propelBullets(
+                    this._fireGun(
+                      this._updateShipPosition(this.state)
+                    )
                   )
                 )
               )
@@ -167,12 +223,18 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   _spawnEnemies(state) {
-    if (this.tick % 30 == 0)
+    if (this.tick % 60 == 0)
       return this._spawnEnemy(Math.random() * this.props.width, state);
     return state;
   }
 
   render() {
+    let levelComplete = <div className="levelcomplete">
+      <h1>Level 1 complete</h1>
+      <h2>You scored {this.state.points} points!</h2>
+      <p>That's the end of the demo for now!</p>
+    </div>
+
     let gameOver = <div className="gameover">
       <h1>GAME OVER</h1>
       <p>Your score was {this.state.points}</p>
@@ -193,14 +255,20 @@ module.exports = class SceneComponent extends React.Component {
     return <div style={{
       width: `${this.props.width}px`,
       height: `${this.props.height}px`
-    }} className={classnames({ scene: true, 'scene-gameover': !!this.state.ship.destroyedOn })}>
-      <div className="text">POINTS <strong>{this.state.points}</strong></div>
-      <div className="text">ARMOR <strong>{this.state.ship.armor}</strong></div>
+    }} className={classnames({
+      scene: true,
+      'scene-gameover': !!this.state.ship.destroyedOn,
+      'scene-levelcomplete': !!this.state.level.complete
+    })}>
+      <div className="text points">{this.state.points}</div>
+      <div className="text armor">ARMOR <strong>{this.state.ship.armor}</strong></div>
+      <canvas id="level" style={{ bottom: -this.state.level.progress }}></canvas>
       <div class="bulletsContainer">{bullets}</div>
       <div class="enemiesContainer">{enemies}</div>
       <ShipComponent ship={this.state.ship}/>
       <div class="effectsContainer">{effects}</div>
       {gameOver}
+      {levelComplete}
     </div>;
   }
 
