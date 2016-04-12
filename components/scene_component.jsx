@@ -181,7 +181,7 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   _progressLevel(state) {
-    state.level.progress += 1;
+    state.level.progress += 0.5;
     if (state.level.progress >= state.level.finishOn) {
       state.level.complete = true;
     }
