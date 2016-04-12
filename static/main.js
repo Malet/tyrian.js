@@ -36013,6 +36013,7 @@ module.exports = require('./lib/React');
 'use strict';
 
 var Promise = require('bluebird');
+var AudioContext = window.AudioContext || window.webkitAudioContext;
 var context = new AudioContext();
 
 module.exports = function (file) {

@@ -1,4 +1,5 @@
 let Promise = require('bluebird');
+let AudioContext = window.AudioContext || window.webkitAudioContext;
 let context = new AudioContext();
 
 module.exports = (file) => {
