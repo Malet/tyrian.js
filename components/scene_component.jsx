@@ -181,6 +181,7 @@ module.exports = class SceneComponent extends React.Component {
   }
 
   _progressLevel(state) {
+    let previousParallax = state.level.parallax;
     state.level.progress += 0.5;
     if (state.level.progress >= state.level.finishOn) {
       state.level.complete = true;
@@ -188,6 +189,15 @@ module.exports = class SceneComponent extends React.Component {
 
     // Calculate parallax
     state.level.parallax = state.ship.x / (this.props.width - state.ship.width);
+    // Update rest of entities with this parallax
+    let parallaxShift = entity => {
+      entity.x += (state.level.parallax - previousParallax);
+      return entity;
+    }
+
+    state.enemies = state.enemies.map(parallaxShift);
+    state.bullets = state.bullets.map(parallaxShift);
+    state.effects = state.effects.map(parallaxShift);
 
     return state;
   }
