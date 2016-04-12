@@ -51,7 +51,8 @@ module.exports = class SceneComponent extends React.Component {
       cullMargin: 10,
       level: {
         progress: 0,
-        complete: false
+        complete: false,
+        parallax: 0.5
       }
     };
   }
@@ -184,6 +185,10 @@ module.exports = class SceneComponent extends React.Component {
     if (state.level.progress >= state.level.finishOn) {
       state.level.complete = true;
     }
+
+    // Calculate parallax
+    state.level.parallax = state.ship.x / (this.props.width - state.ship.width);
+
     return state;
   }
 
@@ -273,7 +278,7 @@ module.exports = class SceneComponent extends React.Component {
       <div className="enemiesContainer">{enemies}</div>
       <ShipComponent ship={this.state.ship}/>
       <div className="effectsContainer">{effects}</div>
-      <canvas id="level" style={{ bottom: -this.state.level.progress }}></canvas>
+      <canvas id="level" style={{ bottom: -this.state.level.progress, left: this.state.level.parallax * -(this.state.level.width - this.props.width) }}></canvas>
       {gameOver}
       {levelComplete}
     </div>;
@@ -405,7 +410,6 @@ module.exports = class SceneComponent extends React.Component {
           newEffects.push(
             state => this._spawnExplosion(enemy.x, enemy.y, null, null, state)
           );
-          shipDamageSound.play();
         }
 
         // Damage ship
