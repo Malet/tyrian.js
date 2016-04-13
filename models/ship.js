@@ -1,11 +1,6 @@
-class Ship {
-  constructor(props) {
-    let initialState = this._initialState(props);
-    Object.keys(initialState).forEach(key => {
-      this[key] = initialState[key];
-    });
-  }
+let PublicState = require('../lib/public_state');
 
+class Ship extends PublicState {
   _initialState(props) {
     let ship = {
       x: 0,

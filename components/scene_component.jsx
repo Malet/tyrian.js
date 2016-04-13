@@ -7,7 +7,7 @@ let BulletComponent = require('./bullet_component.jsx');
 let EnemyComponent = require('./enemy_component.jsx');
 let EffectComponent = require('./effect_component.jsx');
 let $ = require('jquery-browserify');
-let Ship = require('../models/ship');
+let Game = require('../models/game');
 
 var laserSound, explodeSound, shipDamageSound;
 require('../sounds/loader')('sounds/effects/laser.mp3')
@@ -19,29 +19,8 @@ require('../sounds/loader')('sounds/effects/shipDamage.mp3')
 
 module.exports = class SceneComponent extends React.Component {
   constructor(props) {
-    navigator.pointer = navigator.pointer || navigator.webkitPointer;
     super(props);
-    let ship = new Ship(this.props);
-    this.pointer = { x: ship.x, y: ship.y };
-    this.firing = false;
-    this.state = {
-      godMode: false,
-      levelEndedOn: null,
-      ship: ship,
-      bullets: [],
-      enemies: [],
-      effects: [],
-      bulletSeq: 0,
-      enemySeq: 0,
-      effectsSeq: 0,
-      points: 0,
-      cullMargin: 10,
-      level: {
-        progress: 0,
-        complete: false,
-        parallax: 0.5
-      }
-    };
+    this.state = new Game(props);
   }
 
   _pointerLocked(e) {
