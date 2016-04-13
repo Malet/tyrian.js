@@ -1037,7 +1037,7 @@ var Game = function () {
       state.level.parallax = state.ship.x / (state.scene.width - state.ship.width);
       // Update rest of entities with this parallax
       var parallaxShift = function parallaxShift(entity) {
-        entity.x += state.level.parallax - previousParallax;
+        entity.x += previousParallax - state.level.parallax;
         return entity;
       };
 
