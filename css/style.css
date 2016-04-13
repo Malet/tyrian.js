@@ -160,3 +160,7 @@ body {
   height: 200px;
   background: url(../images/interface.gif);
 }
+
+.options {
+  color: black;
+}
