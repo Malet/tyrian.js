@@ -7,6 +7,7 @@ let BulletComponent = require('./bullet_component.jsx');
 let EnemyComponent = require('./enemy_component.jsx');
 let EffectComponent = require('./effect_component.jsx');
 let $ = require('jquery-browserify');
+let Ship = require('../models/ship');
 
 var laserSound, explodeSound, shipDamageSound;
 require('../sounds/loader')('sounds/effects/laser.mp3')
@@ -20,21 +21,7 @@ module.exports = class SceneComponent extends React.Component {
   constructor(props) {
     navigator.pointer = navigator.pointer || navigator.webkitPointer;
     super(props);
-
-    let ship = {
-      x: 0,
-      y: 0,
-      width: 18,
-      height: 25,
-      armor: 100,
-      destroyedOn: null,
-      gun: {
-        firing: false,
-        firingInterval: 7,
-        lastFired: 0
-      }
-    };
-    ship.x = (this.props.width / 2) - (ship.width / 2);
+    let ship = new Ship(this.props);
     this.pointer = { x: ship.x, y: ship.y };
     this.firing = false;
     this.state = {
