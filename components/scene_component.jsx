@@ -435,6 +435,7 @@ module.exports = class SceneComponent extends React.Component {
         }
 
         // TODO: Repel ship
+        shipDamageSound.play();
       }
 
       // Check if a friendly bullet has hit an enemy
