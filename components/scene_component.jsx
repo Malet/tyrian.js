@@ -14,8 +14,7 @@ module.exports = class SceneComponent extends React.Component {
   constructor(props) {
     super(props);
     this.userInput = {
-      firing: false,
-      pointer: { x: 0, y: 0 }
+      firing: false
     };
     this.state = { game: new Game(props) };
     this.state.gameState = this.state.game.state;
@@ -127,6 +126,12 @@ module.exports = class SceneComponent extends React.Component {
       return <EffectComponent attrs={effect} key={effect.key}/>
     });
 
+    let level = this.state.gameState.level.loaded ?
+      <LevelComponent
+        level={this.state.gameState.level}
+        sceneWidth={this.props.width}/> :
+      null;
+
     return <div style={{
       width: `${this.props.width}px`,
       height: `${this.props.height}px`
@@ -141,7 +146,7 @@ module.exports = class SceneComponent extends React.Component {
       <div className="enemiesContainer">{enemies}</div>
       <ShipComponent ship={this.state.gameState.ship}/>
       <div className="effectsContainer">{effects}</div>
-      <LevelComponent level={this.state.gameState.level} sceneWidth={this.props.width}/>
+      {level}
       {gameOver}
       {levelComplete}
     </div>;

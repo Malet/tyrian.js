@@ -38,6 +38,7 @@ class Game {
       points: 0,
       cullMargin: 10,
       level: {
+        loaded: false,
         progress: 0,
         complete: false,
         parallax: 0
@@ -50,52 +51,29 @@ class Game {
 
   level1() {
     let levelData = require('../maps/level1');
-    let canvas = $('#level')[0];
-    let context = canvas.getContext('2d');
-    let tilesImage = $('#tiles1')[0];
-    var i = 0, j = 0;
-    // Resize the canvas to fit the new map
-    canvas.width = levelData.mapWidth * levelData.tileWidth;
-    canvas.height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
 
-    levelData.tiles.forEach(tileNum => {
-      tileNum -= 1; // Tiles counts from 1;
-      context.drawImage(
-        tilesImage,
-        (tileNum % levelData.spriteWidth) * levelData.tileWidth,
-        Math.floor(tileNum / levelData.spriteWidth) * levelData.tileHeight,
-        levelData.tileWidth,
-        levelData.tileHeight,
-        i * levelData.tileWidth,
-        j * levelData.tileHeight,
-        levelData.tileWidth,
-        levelData.tileHeight
-      );
+    let width = levelData.mapWidth * levelData.tileWidth;
+    let height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
 
-      if (i === levelData.mapWidth - 1) {
-        i = 0;
-        j += 1;
-      } else {
-        i += 1;
-      }
-    });
-
-    this._state.level = {
-      height: canvas.height,
-      width: canvas.width,
+    Object.assign(this._state.level, {
+      loaded: true,
+      parallaxScale: 40,
+      data: levelData,
+      height: height,
+      width: width,
       progress: 0,
       complete: false,
-      finishOn: canvas.height - this._state.scene.height
-    };
+      finishOn: height - this._state.scene.height
+    });
   }
 
   tick(userInput) {
     this._state.userInput = userInput;
     this._state.tickNum += 1;
-    let tickKey = `stateTick ${this._state.tickNum}`;
-    console.time(tickKey);
+    // let tickKey = `stateTick ${this._state.tickNum}`;
+    // console.time(tickKey);
     this._state = this._tick(this._state);
-    console.timeEnd(tickKey);
+    // console.timeEnd(tickKey);
     return this;
   }
 
@@ -384,7 +362,9 @@ class Game {
   }
 
   _updateShipPosition(state) {
-    state.ship = Object.assign(state.ship, state.userInput.pointer);
+    if (state.userInput.pointer) {
+      state.ship = Object.assign(state.ship, state.userInput.pointer);
+    }
     return state;
   }
 
@@ -396,10 +376,10 @@ class Game {
     }
 
     // Calculate parallax
-    state.level.parallax = state.ship.x / (state.scene.width - state.ship.width);
+    state.level.parallax = (state.ship.x / (state.scene.width - state.ship.width));
     // Update rest of entities with this parallax
     let parallaxShift = entity => {
-      entity.x += (previousParallax - state.level.parallax);
+      entity.x += (previousParallax - (state.level.parallax)) * state.level.parallaxScale;
       return entity;
     }
 
