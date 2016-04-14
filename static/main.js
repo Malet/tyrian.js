@@ -154,7 +154,19 @@ module.exports = function (_React$Component) {
   _createClass(InterfaceComponent, [{
     key: "render",
     value: function render() {
-      return React.createElement("div", { className: "interface" });
+      return React.createElement(
+        "div",
+        { className: "interface" },
+        React.createElement("div", { className: "shield" }),
+        React.createElement("div", { className: "armor", style: this._armorStyle() })
+      );
+    }
+  }, {
+    key: "_armorStyle",
+    value: function _armorStyle() {
+      return {
+        height: Math.round(this.props.armor / 100 * 58)
+      };
     }
   }]);
 
@@ -185,6 +197,31 @@ module.exports = function (_React$Component) {
   }
 
   _createClass(LevelComponent, [{
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var canvas = ReactDOM.findDOMNode(this);
+      canvas.height = this.props.level.height;
+      canvas.width = this.props.level.width;
+      var context = canvas.getContext('2d');
+      var tilesImage = $('#tiles1')[0];
+      var i = 0,
+          j = 0;
+      var levelData = this.props.level.data;
+
+      // Resize the canvas to fit the new map
+      levelData.tiles.forEach(function (tileNum) {
+        tileNum -= 1; // Tiles counts from 1;
+        context.drawImage(tilesImage, tileNum % levelData.spriteWidth * levelData.tileWidth, Math.floor(tileNum / levelData.spriteWidth) * levelData.tileHeight, levelData.tileWidth, levelData.tileHeight, i * levelData.tileWidth, j * levelData.tileHeight, levelData.tileWidth, levelData.tileHeight);
+
+        if (i === levelData.mapWidth - 1) {
+          i = 0;
+          j += 1;
+        } else {
+          i += 1;
+        }
+      });
+    }
+  }, {
     key: 'render',
     value: function render() {
       return React.createElement('canvas', { id: 'level', style: this._style() });
@@ -217,9 +254,30 @@ var React = require('react');
 var SceneComponent = require('./scene_component.jsx');
 var InterfaceComponent = require('./interface_component.jsx');
 var OptionsPanel = require('./options_panel.jsx');
+var ReactDOM = require('react-dom');
+var Game = require('../models/game');
 
 module.exports = function (_React$Component) {
   _inherits(MainComponent, _React$Component);
+
+  function MainComponent() {
+    _classCallCheck(this, MainComponent);
+
+    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MainComponent).call(this));
+
+    _this.userInput = {
+      firing: false,
+      paused: false
+    };
+    _this.state = {
+      game: new Game({
+        width: 263,
+        height: 184
+      })
+    };
+    _this.state.gameState = _this.state.game.state;
+    return _this;
+  }
 
   _createClass(MainComponent, [{
     key: 'render',
@@ -232,8 +290,8 @@ module.exports = function (_React$Component) {
         React.createElement(
           'div',
           { className: 'game' },
-          React.createElement(SceneComponent, { width: '263', height: '184' }),
-          React.createElement(InterfaceComponent, null)
+          React.createElement(SceneComponent, { game: this.state.gameState }),
+          React.createElement(InterfaceComponent, { armor: this.state.gameState.ship.armor })
         ),
         React.createElement(OptionsPanel, {
           checked: this.state.godMode,
@@ -244,21 +302,122 @@ module.exports = function (_React$Component) {
         })
       );
     }
+  }, {
+    key: 'componentDidMount',
+    value: function componentDidMount() {
+      var _this3 = this;
+
+      var domNode = ReactDOM.findDOMNode(this);
+      var offset = $(domNode).offset();
+
+      $(document).on('mousemove.game', function (e) {
+        var x, y;
+        if (_this3._pointerLocked(e)) {
+          var m = _this3._getPointerMovement(e.originalEvent);
+          x = _this3.state.gameState.ship.x + m.movementX;
+          y = _this3.state.gameState.ship.y - m.movementY;
+        } else {
+          x = Math.round(e.pageX - offset.left);
+          y = _this3.state.gameState.scene.height - Math.round(e.pageY - offset.top);
+        }
+
+        _this3.userInput.pointer = {
+          x: Math.max(0, Math.min(x, _this3.state.gameState.scene.width - _this3.state.gameState.ship.width)),
+          y: Math.max(0, Math.min(y, _this3.state.gameState.scene.height - _this3.state.gameState.ship.height))
+        };
+      });
+
+      // Keyboard firing
+      $(document).on('keydown.space', function (e) {
+        if (e.keyCode == 32) {
+          _this3.userInput.firing = true;
+        }
+      });
+      $(document).on('keyup.space', function (e) {
+        if (e.keyCode == 32) {
+          _this3.userInput.firing = false;
+        }
+      });
+
+      $(document).on('keypress.p', function (e) {
+        if (e.keyCode == 112) {
+          _this3.userInput.paused = !_this3.userInput.paused;
+          if (!_this3.userInput.paused) {
+            _this3._tick();
+          }
+        }
+      });
+
+      // Mouse firing
+      $(document).on('mousedown.fire', function (e) {
+        _this3.userInput.firing = true;
+      });
+      $(document).on('mouseup.fire', function (e) {
+        _this3.userInput.firing = false;
+      });
+
+      $(document).on('click.game', function (_) {
+        _this3._enablePointerLock();
+      });
+
+      this.state.game.level1();
+      this._tick();
+    }
+  }, {
+    key: '_tick',
+    value: function _tick(elapsedTime) {
+      if (this.state.gameState.levelEndedOn || this.state.gameState.level.complete || this.userInput.paused) {
+        // Deregister any click handlers etc
+        // $(document).off('click.game');
+        // $(document).off('mousemove.game');
+        // $(document).off('keydown.space');
+        // $(document).off('keyup.space');
+        // $(document).off('mousedown.fire');
+        // $(document).off('mouseup.fire');
+      } else {
+          var newState = { gameState: this.state.game.tick(this.userInput).state };
+          // let reactTickKey = `reactTick ${newState.tickNum}`;
+          // console.time(reactTickKey);
+          this.setState(newState);
+          // console.timeEnd(reactTickKey);
+          requestAnimationFrame(this._tick.bind(this));
+        }
+    }
+  }, {
+    key: '_pointerLocked',
+    value: function _pointerLocked(e) {
+      return !!(document.pointerLockElement || document.mozPointerLockElement);
+    }
+  }, {
+    key: '_getPointerMovement',
+    value: function _getPointerMovement(e) {
+      if (e.movementX !== undefined) {
+        return {
+          movementX: e.movementX,
+          movementY: e.movementY
+        };
+      } else {
+        return {
+          movementX: e.mozMovementX,
+          movementY: e.mozMovementY
+        };
+      }
+    }
+  }, {
+    key: '_enablePointerLock',
+    value: function _enablePointerLock() {
+      if (!document.pointerLockElement) {
+        var el = ReactDOM.findDOMNode(this);
+        el.requestPointerLock = el.requestPointerLock || el.mozRequestPointerLock;
+        el.requestPointerLock();
+      }
+    }
   }]);
-
-  function MainComponent() {
-    _classCallCheck(this, MainComponent);
-
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(MainComponent).call(this));
-
-    _this.state = { godMode: false };
-    return _this;
-  }
 
   return MainComponent;
 }(React.Component);
 
-},{"./interface_component.jsx":4,"./options_panel.jsx":7,"./scene_component.jsx":8,"react":184}],7:[function(require,module,exports){
+},{"../models/game":13,"./interface_component.jsx":4,"./options_panel.jsx":7,"./scene_component.jsx":8,"react":184,"react-dom":48}],7:[function(require,module,exports){
 "use strict";
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -321,7 +480,6 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
 var React = require('react');
-var ReactDOM = require('react-dom');
 var classnames = require('classnames');
 var Mousetrap = require('mousetrap');
 var ShipComponent = require('./ship_component.jsx');
@@ -330,7 +488,6 @@ var EnemyComponent = require('./enemy_component.jsx');
 var EffectComponent = require('./effect_component.jsx');
 var LevelComponent = require('./level_component.jsx');
 var $ = require('jquery-browserify');
-var Game = require('../models/game');
 
 module.exports = function (_React$Component) {
   _inherits(SceneComponent, _React$Component);
@@ -338,110 +495,10 @@ module.exports = function (_React$Component) {
   function SceneComponent(props) {
     _classCallCheck(this, SceneComponent);
 
-    var _this = _possibleConstructorReturn(this, Object.getPrototypeOf(SceneComponent).call(this, props));
-
-    _this.userInput = {
-      firing: false,
-      pointer: { x: 0, y: 0 }
-    };
-    _this.state = { game: new Game(props) };
-    _this.state.gameState = _this.state.game.state;
-    return _this;
+    return _possibleConstructorReturn(this, Object.getPrototypeOf(SceneComponent).call(this, props));
   }
 
   _createClass(SceneComponent, [{
-    key: '_pointerLocked',
-    value: function _pointerLocked(e) {
-      return !!(document.pointerLockElement || document.mozPointerLockElement);
-    }
-  }, {
-    key: '_getPointerMovement',
-    value: function _getPointerMovement(e) {
-      if (e.movementX !== undefined) {
-        return {
-          movementX: e.movementX,
-          movementY: e.movementY
-        };
-      } else {
-        return {
-          movementX: e.mozMovementX,
-          movementY: e.mozMovementY
-        };
-      }
-    }
-  }, {
-    key: 'componentDidMount',
-    value: function componentDidMount() {
-      var _this2 = this;
-
-      var domNode = ReactDOM.findDOMNode(this);
-      var offset = $(domNode).offset();
-
-      $(document).on('mousemove.game', function (e) {
-        var x, y;
-        if (_this2._pointerLocked(e)) {
-          var m = _this2._getPointerMovement(e.originalEvent);
-          x = _this2.state.gameState.ship.x + m.movementX;
-          y = _this2.state.gameState.ship.y - m.movementY;
-        } else {
-          x = Math.round(e.pageX - offset.left);
-          y = _this2.props.height - Math.round(e.pageY - offset.top);
-        }
-
-        _this2.userInput.pointer = {
-          x: Math.max(0, Math.min(x, _this2.props.width - _this2.state.gameState.ship.width)),
-          y: Math.max(0, Math.min(y, _this2.props.height - _this2.state.gameState.ship.height))
-        };
-      });
-
-      // Keyboard firing
-      $(document).on('keydown.space', function (e) {
-        if (e.keyCode == 32) {
-          _this2.userInput.firing = true;
-        }
-      });
-      $(document).on('keyup.space', function (e) {
-        if (e.keyCode == 32) {
-          _this2.userInput.firing = false;
-        }
-      });
-
-      // Mouse firing
-      $(document).on('mousedown.fire', function (e) {
-        _this2.userInput.firing = true;
-      });
-      $(document).on('mouseup.fire', function (e) {
-        _this2.userInput.firing = false;
-      });
-
-      $(document).on('click.game', function (_) {
-        _this2._enablePointerLock();
-      });
-
-      this.state.game.level1();
-      this._tick();
-    }
-  }, {
-    key: '_tick',
-    value: function _tick(elapsedTime) {
-      if (this.state.gameState.levelEndedOn || this.state.gameState.level.complete) {
-        // Deregister any click handlers etc
-        $(document).off('click.game');
-        $(document).off('mousemove.game');
-        $(document).off('keydown.space');
-        $(document).off('keyup.space');
-        $(document).off('mousedown.fire');
-        $(document).off('mouseup.fire');
-      } else {
-        var newState = { gameState: this.state.game.tick(this.userInput).state };
-        var reactTickKey = 'reactTick ' + newState.tickNum;
-        console.time(reactTickKey);
-        this.setState(newState);
-        console.timeEnd(reactTickKey);
-        requestAnimationFrame(this._tick.bind(this));
-      }
-    }
-  }, {
     key: 'render',
     value: function render() {
       var levelComplete = React.createElement(
@@ -456,7 +513,7 @@ module.exports = function (_React$Component) {
           'h2',
           null,
           'You scored ',
-          this.state.gameState.points,
+          this.props.game.points,
           ' points!'
         ),
         React.createElement(
@@ -478,46 +535,40 @@ module.exports = function (_React$Component) {
           'p',
           null,
           'Your score was ',
-          this.state.gameState.points
+          this.props.game.points
         )
       );
 
-      var bullets = this.state.gameState.bullets.map(function (bullet) {
+      var bullets = this.props.game.bullets.map(function (bullet) {
         return React.createElement(BulletComponent, { x: bullet.x, y: bullet.y, height: bullet.height, width: bullet.width, key: bullet.key });
       });
 
-      var enemies = this.state.gameState.enemies.map(function (enemy) {
+      var enemies = this.props.game.enemies.map(function (enemy) {
         return React.createElement(EnemyComponent, { attrs: enemy, key: enemy.key });
       });
 
-      var effects = this.state.gameState.effects.map(function (effect) {
+      var effects = this.props.game.effects.map(function (effect) {
         return React.createElement(EffectComponent, { attrs: effect, key: effect.key });
       });
+
+      var level = this.props.game.level.loaded ? React.createElement(LevelComponent, {
+        level: this.props.game.level,
+        sceneWidth: this.props.game.scene.width }) : null;
 
       return React.createElement(
         'div',
         { style: {
-            width: this.props.width + 'px',
-            height: this.props.height + 'px'
+            width: this.props.game.scene.width + 'px',
+            height: this.props.game.scene.height + 'px'
           }, className: classnames({
             scene: true,
-            'scene-gameover': !!this.state.gameState.ship.destroyedOn,
-            'scene-levelcomplete': !!this.state.gameState.level.complete
+            'scene-gameover': !!this.props.game.ship.destroyedOn,
+            'scene-levelcomplete': !!this.props.game.level.complete
           }) },
         React.createElement(
           'div',
           { className: 'text points' },
-          this.state.gameState.points
-        ),
-        React.createElement(
-          'div',
-          { className: 'text armor' },
-          'ARMOR ',
-          React.createElement(
-            'strong',
-            null,
-            this.state.gameState.ship.armor
-          )
+          this.props.game.points
         ),
         React.createElement(
           'div',
@@ -529,32 +580,23 @@ module.exports = function (_React$Component) {
           { className: 'enemiesContainer' },
           enemies
         ),
-        React.createElement(ShipComponent, { ship: this.state.gameState.ship }),
+        React.createElement(ShipComponent, { ship: this.props.game.ship }),
         React.createElement(
           'div',
           { className: 'effectsContainer' },
           effects
         ),
-        React.createElement(LevelComponent, { level: this.state.gameState.level, sceneWidth: this.props.width }),
+        level,
         gameOver,
         levelComplete
       );
-    }
-  }, {
-    key: '_enablePointerLock',
-    value: function _enablePointerLock() {
-      if (!document.pointerLockElement) {
-        var el = ReactDOM.findDOMNode(this);
-        el.requestPointerLock = el.requestPointerLock || el.mozRequestPointerLock;
-        el.requestPointerLock();
-      }
     }
   }]);
 
   return SceneComponent;
 }(React.Component);
 
-},{"../models/game":13,"./bullet_component.jsx":1,"./effect_component.jsx":2,"./enemy_component.jsx":3,"./level_component.jsx":5,"./ship_component.jsx":9,"classnames":17,"jquery-browserify":44,"mousetrap":45,"react":184,"react-dom":48}],9:[function(require,module,exports){
+},{"./bullet_component.jsx":1,"./effect_component.jsx":2,"./enemy_component.jsx":3,"./level_component.jsx":5,"./ship_component.jsx":9,"classnames":17,"jquery-browserify":44,"mousetrap":45,"react":184}],9:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -695,6 +737,7 @@ var Game = function () {
         points: 0,
         cullMargin: 10,
         level: {
+          loaded: false,
           progress: 0,
           complete: false,
           parallax: 0
@@ -706,44 +749,30 @@ var Game = function () {
     key: 'level1',
     value: function level1() {
       var levelData = require('../maps/level1');
-      var canvas = $('#level')[0];
-      var context = canvas.getContext('2d');
-      var tilesImage = $('#tiles1')[0];
-      var i = 0,
-          j = 0;
-      // Resize the canvas to fit the new map
-      canvas.width = levelData.mapWidth * levelData.tileWidth;
-      canvas.height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
 
-      levelData.tiles.forEach(function (tileNum) {
-        tileNum -= 1; // Tiles counts from 1;
-        context.drawImage(tilesImage, tileNum % levelData.spriteWidth * levelData.tileWidth, Math.floor(tileNum / levelData.spriteWidth) * levelData.tileHeight, levelData.tileWidth, levelData.tileHeight, i * levelData.tileWidth, j * levelData.tileHeight, levelData.tileWidth, levelData.tileHeight);
+      var width = levelData.mapWidth * levelData.tileWidth;
+      var height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
 
-        if (i === levelData.mapWidth - 1) {
-          i = 0;
-          j += 1;
-        } else {
-          i += 1;
-        }
-      });
-
-      this._state.level = {
-        height: canvas.height,
-        width: canvas.width,
+      Object.assign(this._state.level, {
+        loaded: true,
+        parallaxScale: 40,
+        data: levelData,
+        height: height,
+        width: width,
         progress: 0,
         complete: false,
-        finishOn: canvas.height - this._state.scene.height
-      };
+        finishOn: height - this._state.scene.height
+      });
     }
   }, {
     key: 'tick',
     value: function tick(userInput) {
       this._state.userInput = userInput;
       this._state.tickNum += 1;
-      var tickKey = 'stateTick ' + this._state.tickNum;
-      console.time(tickKey);
+      // let tickKey = `stateTick ${this._state.tickNum}`;
+      // console.time(tickKey);
       this._state = this._tick(this._state);
-      console.timeEnd(tickKey);
+      // console.timeEnd(tickKey);
       return this;
     }
   }, {
@@ -1021,7 +1050,9 @@ var Game = function () {
   }, {
     key: '_updateShipPosition',
     value: function _updateShipPosition(state) {
-      state.ship = Object.assign(state.ship, state.userInput.pointer);
+      if (state.userInput.pointer) {
+        state.ship = Object.assign(state.ship, state.userInput.pointer);
+      }
       return state;
     }
   }, {
@@ -1037,7 +1068,7 @@ var Game = function () {
       state.level.parallax = state.ship.x / (state.scene.width - state.ship.width);
       // Update rest of entities with this parallax
       var parallaxShift = function parallaxShift(entity) {
-        entity.x += previousParallax - state.level.parallax;
+        entity.x += (previousParallax - state.level.parallax) * state.level.parallaxScale;
         return entity;
       };
 
