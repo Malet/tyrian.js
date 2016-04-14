@@ -80,6 +80,7 @@ class Game {
   _tick(startState) {
     return [
       this._updateShipPosition,
+      this._replenishShields,
       this._fireGun,
       this._propelBullets,
       this._propelEnemies,
@@ -89,6 +90,13 @@ class Game {
       this._spawnEnemies,
       this._progressLevel
     ].reduce((state, mutator) => mutator.bind(this)(state), startState);
+  }
+
+  _replenishShields(state) {
+    if (state.tickNum % 30 == 0){
+      state.ship.shield.current = Math.min(state.ship.shield.max, state.ship.shield.current + 3);
+    }
+    return state;
   }
 
   _spawnEnemies(state) {
@@ -226,11 +234,13 @@ class Game {
         }
 
         // Damage ship
-        let newArmor = state.godMode ?
-          state.ship.armor :
-          Math.max(0, state.ship.armor - enemy.collisionDamage);
-
-        state.ship.armor = newArmor;
+        if (!state.godMode) {
+          let newShield = state.ship.shield.current - enemy.collisionDamage;
+          if (newShield <= 0) {
+            state.ship.armor = Math.max(0, state.ship.armor + newShield);
+          }
+          state.ship.shield.current = Math.max(0, newShield);
+        }
         if (state.ship.armor === 0) {
           // Use this tick to set a slight delay on the respawn, or game over.
           state.ship.destroyedOn = state.tickNum;

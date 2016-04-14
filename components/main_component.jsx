@@ -25,7 +25,10 @@ module.exports = class MainComponent extends React.Component {
     return <div className="main">
       <div className="game">
         <SceneComponent game={this.state.gameState}/>
-        <InterfaceComponent armor={this.state.gameState.ship.armor}/>
+        <InterfaceComponent
+          armor={this.state.gameState.ship.armor}
+          shield={this.state.gameState.ship.shield}
+        />
       </div>
       <OptionsPanel
         checked={this.state.godMode}

@@ -7,7 +7,11 @@ class Ship extends PublicState {
       y: 0,
       width: 18,
       height: 25,
-      armor: 100,
+      armor: 45,
+      shield: {
+        current: 0,
+        max: 50
+      },
       destroyedOn: null,
       gun: {
         firing: false,

@@ -157,7 +157,7 @@ module.exports = function (_React$Component) {
       return React.createElement(
         "div",
         { className: "interface" },
-        React.createElement("div", { className: "shield" }),
+        React.createElement("div", { className: "shield", style: this._shieldStyle() }),
         React.createElement("div", { className: "armor", style: this._armorStyle() })
       );
     }
@@ -166,6 +166,13 @@ module.exports = function (_React$Component) {
     value: function _armorStyle() {
       return {
         height: Math.round(this.props.armor / 100 * 58)
+      };
+    }
+  }, {
+    key: "_shieldStyle",
+    value: function _shieldStyle() {
+      return {
+        height: Math.round(this.props.shield.current / 100 * 58)
       };
     }
   }]);
@@ -291,7 +298,10 @@ module.exports = function (_React$Component) {
           'div',
           { className: 'game' },
           React.createElement(SceneComponent, { game: this.state.gameState }),
-          React.createElement(InterfaceComponent, { armor: this.state.gameState.ship.armor })
+          React.createElement(InterfaceComponent, {
+            armor: this.state.gameState.ship.armor,
+            shield: this.state.gameState.ship.shield
+          })
         ),
         React.createElement(OptionsPanel, {
           checked: this.state.godMode,
@@ -780,9 +790,17 @@ var Game = function () {
     value: function _tick(startState) {
       var _this2 = this;
 
-      return [this._updateShipPosition, this._fireGun, this._propelBullets, this._propelEnemies, this._removeOutOfBounds, this._checkCollisions, this._removeOldEffects, this._spawnEnemies, this._progressLevel].reduce(function (state, mutator) {
+      return [this._updateShipPosition, this._replenishShields, this._fireGun, this._propelBullets, this._propelEnemies, this._removeOutOfBounds, this._checkCollisions, this._removeOldEffects, this._spawnEnemies, this._progressLevel].reduce(function (state, mutator) {
         return mutator.bind(_this2)(state);
       }, startState);
+    }
+  }, {
+    key: '_replenishShields',
+    value: function _replenishShields(state) {
+      if (state.tickNum % 30 == 0) {
+        state.ship.shield.current = Math.min(state.ship.shield.max, state.ship.shield.current + 3);
+      }
+      return state;
     }
   }, {
     key: '_spawnEnemies',
@@ -926,9 +944,13 @@ var Game = function () {
           }
 
           // Damage ship
-          var newArmor = state.godMode ? state.ship.armor : Math.max(0, state.ship.armor - enemy.collisionDamage);
-
-          state.ship.armor = newArmor;
+          if (!state.godMode) {
+            var newShield = state.ship.shield.current - enemy.collisionDamage;
+            if (newShield <= 0) {
+              state.ship.armor = Math.max(0, state.ship.armor + newShield);
+            }
+            state.ship.shield.current = Math.max(0, newShield);
+          }
           if (state.ship.armor === 0) {
             // Use this tick to set a slight delay on the respawn, or game over.
             state.ship.destroyedOn = state.tickNum;
@@ -1150,7 +1172,11 @@ var Ship = function (_PublicState) {
         y: 0,
         width: 18,
         height: 25,
-        armor: 100,
+        armor: 45,
+        shield: {
+          current: 0,
+          max: 50
+        },
         destroyedOn: null,
         gun: {
           firing: false,
