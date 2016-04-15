@@ -66,7 +66,7 @@ module.exports = class MainComponent extends React.Component {
     let domNode = ReactDOM.findDOMNode(this);
     let offset = $(domNode).offset();
 
-    $(document).on('mousemove.game', e => {
+    $(document).on('mousemove.game touchmove.game', e => {
       var x, y;
       if (this._pointerLocked(e)) {
         let m = this._getPointerMovement(e.originalEvent);

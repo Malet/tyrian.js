@@ -344,7 +344,7 @@ module.exports = function (_React$Component) {
       var domNode = ReactDOM.findDOMNode(this);
       var offset = $(domNode).offset();
 
-      $(document).on('mousemove.game', function (e) {
+      $(document).on('mousemove.game touchmove.game', function (e) {
         var x, y;
         if (_this3._pointerLocked(e)) {
           var m = _this3._getPointerMovement(e.originalEvent);
