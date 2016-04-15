@@ -262,7 +262,11 @@ var SceneComponent = require('./scene_component.jsx');
 var InterfaceComponent = require('./interface_component.jsx');
 var OptionsPanel = require('./options_panel.jsx');
 var ReactDOM = require('react-dom');
-var Game = require('../models/game');
+var GameLoader = require('../models/game');
+var gameProps = {
+  width: 263,
+  height: 184
+};
 
 module.exports = function (_React$Component) {
   _inherits(MainComponent, _React$Component);
@@ -276,40 +280,60 @@ module.exports = function (_React$Component) {
       firing: false,
       paused: false
     };
-    _this.state = {
-      game: new Game({
-        width: 263,
-        height: 184
-      })
-    };
-    _this.state.gameState = _this.state.game.state;
+    _this.loaded = false;
+
+    new GameLoader(gameProps).then(function (game) {
+      _this.state = { game: game };
+      _this.loaded = true;
+      _this.start();
+    });
     return _this;
   }
 
   _createClass(MainComponent, [{
+    key: 'start',
+    value: function start() {
+      window.cancelAnimationFrame(this.lastAnimationFrame);
+      this.state.game.reset(gameProps);
+      this.state.game.level1();
+      this.state.gameState = this.state.game.state;
+      this._tick();
+    }
+  }, {
     key: 'render',
     value: function render() {
       var _this2 = this;
 
+      var game;
+      if (this.loaded) {
+        game = React.createElement(
+          'div',
+          null,
+          React.createElement(
+            'div',
+            { className: 'game' },
+            React.createElement(SceneComponent, { game: this.state.gameState }),
+            React.createElement(InterfaceComponent, {
+              armor: this.state.gameState.ship.armor,
+              shield: this.state.gameState.ship.shield
+            })
+          ),
+          React.createElement(OptionsPanel, {
+            checked: this.state.godMode,
+            onChange: function onChange(_) {
+              _this2.state.godMode = !_this2.state.godMode;
+              _this2.setState(_this2.state);
+            }
+          })
+        );
+      } else {
+        game = null;
+      }
+
       return React.createElement(
         'div',
         { className: 'main' },
-        React.createElement(
-          'div',
-          { className: 'game' },
-          React.createElement(SceneComponent, { game: this.state.gameState }),
-          React.createElement(InterfaceComponent, {
-            armor: this.state.gameState.ship.armor,
-            shield: this.state.gameState.ship.shield
-          })
-        ),
-        React.createElement(OptionsPanel, {
-          checked: this.state.godMode,
-          onChange: function onChange(_) {
-            _this2.state.godMode = !_this2.state.godMode;
-            _this2.setState(_this2.state);
-          }
-        })
+        game
       );
     }
   }, {
@@ -358,6 +382,12 @@ module.exports = function (_React$Component) {
         }
       });
 
+      $(document).on('keypress.r', function (e) {
+        if (e.keyCode == 114) {
+          _this3.start();
+        }
+      });
+
       // Mouse firing
       $(document).on('mousedown.fire', function (e) {
         _this3.userInput.firing = true;
@@ -369,9 +399,6 @@ module.exports = function (_React$Component) {
       $(document).on('click.game', function (_) {
         _this3._enablePointerLock();
       });
-
-      this.state.game.level1();
-      this._tick();
     }
   }, {
     key: '_tick',
@@ -390,7 +417,7 @@ module.exports = function (_React$Component) {
           // console.time(reactTickKey);
           this.setState(newState);
           // console.timeEnd(reactTickKey);
-          requestAnimationFrame(this._tick.bind(this));
+          this.lastAnimationFrame = requestAnimationFrame(this._tick.bind(this));
         }
     }
   }, {
@@ -717,17 +744,24 @@ var Game = function () {
 
     _classCallCheck(this, Game);
 
-    this._state = this._initialState(props);
-    Promise.join(require('../sounds/loader')('sounds/effects/laser.mp3'), require('../sounds/loader')('sounds/effects/explode.mp3'), require('../sounds/loader')('sounds/effects/shipDamage.mp3'), function (laser, explode, shipDamage) {
+    this.reset(props);
+    return Promise.join(require('../sounds/loader')('sounds/effects/laser.mp3'), require('../sounds/loader')('sounds/effects/explode.mp3'), require('../sounds/loader')('sounds/effects/shipDamage.mp3'), function (laser, explode, shipDamage) {
       _this.sounds = {
         laser: laser,
         explode: explode,
         shipDamage: shipDamage
       };
+    }).then(function (_) {
+      return _this;
     });
   }
 
   _createClass(Game, [{
+    key: 'reset',
+    value: function reset(props) {
+      this._state = this._initialState(props);
+    }
+  }, {
     key: '_initialState',
     value: function _initialState(props) {
       var ship = new Ship(props);
@@ -1182,7 +1216,8 @@ var Ship = function (_PublicState) {
           firing: false,
           firingInterval: 7,
           lastFired: 0
-        }
+        },
+        collisionDamage: 5
       };
       ship.x = props.width / 2 - ship.width / 2;
 

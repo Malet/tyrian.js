@@ -5,8 +5,8 @@ let Promise = require('bluebird');
 
 class Game {
   constructor(props) {
-    this._state = this._initialState(props);
-    Promise.join(
+    this.reset(props);
+    return Promise.join(
       require('../sounds/loader')('sounds/effects/laser.mp3'),
       require('../sounds/loader')('sounds/effects/explode.mp3'),
       require('../sounds/loader')('sounds/effects/shipDamage.mp3'),
@@ -17,7 +17,12 @@ class Game {
           shipDamage: shipDamage
         };
       }
-    );
+    )
+    .then(_ => this);
+  }
+
+  reset(props) {
+    this._state = this._initialState(props);
   }
 
   _initialState(props) {

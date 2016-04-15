@@ -3,7 +3,11 @@ let SceneComponent = require('./scene_component.jsx');
 let InterfaceComponent = require('./interface_component.jsx');
 let OptionsPanel = require('./options_panel.jsx');
 let ReactDOM = require('react-dom');
-let Game = require('../models/game');
+let GameLoader = require('../models/game');
+let gameProps = {
+  width: 263,
+  height: 184
+};
 
 module.exports = class MainComponent extends React.Component {
   constructor() {
@@ -12,31 +16,49 @@ module.exports = class MainComponent extends React.Component {
       firing: false,
       paused: false
     };
-    this.state = {
-      game: new Game({
-        width: 263,
-        height: 184
-      })
-    };
+    this.loaded = false;
+
+    new GameLoader(gameProps)
+    .then(game => {
+      this.state = { game: game };
+      this.loaded = true;
+      this.start();
+    });
+  }
+
+  start() {
+    window.cancelAnimationFrame(this.lastAnimationFrame);
+    this.state.game.reset(gameProps);
+    this.state.game.level1();
     this.state.gameState = this.state.game.state;
+    this._tick();
   }
 
   render() {
+    var game;
+    if (this.loaded) {
+      game = <div>
+        <div className="game">
+          <SceneComponent game={this.state.gameState}/>
+          <InterfaceComponent
+            armor={this.state.gameState.ship.armor}
+            shield={this.state.gameState.ship.shield}
+            />
+        </div>
+        <OptionsPanel
+          checked={this.state.godMode}
+          onChange={_ => {
+            this.state.godMode = !this.state.godMode;
+            this.setState(this.state);
+          }}
+          />
+      </div>;
+    } else {
+      game = null;
+    }
+
     return <div className="main">
-      <div className="game">
-        <SceneComponent game={this.state.gameState}/>
-        <InterfaceComponent
-          armor={this.state.gameState.ship.armor}
-          shield={this.state.gameState.ship.shield}
-        />
-      </div>
-      <OptionsPanel
-        checked={this.state.godMode}
-        onChange={_ => {
-          this.state.godMode = !this.state.godMode;
-          this.setState(this.state);
-        }}
-      />
+      {game}
     </div>;
   }
 
@@ -78,6 +100,12 @@ module.exports = class MainComponent extends React.Component {
       }
     });
 
+    $(document).on('keypress.r', e => {
+      if (e.keyCode == 114) {
+        this.start();
+      }
+    });
+
     // Mouse firing
     $(document).on('mousedown.fire', e => {
       this.userInput.firing = true;
@@ -89,9 +117,6 @@ module.exports = class MainComponent extends React.Component {
     $(document).on('click.game', _ => {
       this._enablePointerLock();
     });
-
-    this.state.game.level1();
-    this._tick();
   }
 
   _tick(elapsedTime) {
@@ -113,7 +138,7 @@ module.exports = class MainComponent extends React.Component {
       // console.time(reactTickKey);
       this.setState(newState);
       // console.timeEnd(reactTickKey);
-      requestAnimationFrame(this._tick.bind(this));
+      this.lastAnimationFrame = requestAnimationFrame(this._tick.bind(this));
     }
   }
 

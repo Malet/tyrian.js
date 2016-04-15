@@ -17,7 +17,8 @@ class Ship extends PublicState {
         firing: false,
         firingInterval: 7,
         lastFired: 0
-      }
+      },
+      collisionDamage: 5
     };
     ship.x = (props.width / 2) - (ship.width / 2);
 
