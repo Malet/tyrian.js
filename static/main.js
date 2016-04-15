@@ -344,7 +344,19 @@ module.exports = function (_React$Component) {
       var domNode = ReactDOM.findDOMNode(this);
       var offset = $(domNode).offset();
 
-      $(document).on('mousemove.game touchmove.game', function (e) {
+      $(document).on('touchmove.game', function (e) {
+        var x, y;
+        x = Math.round((e.originalEvent.changedTouches[0].pageX - offset.left) / 2);
+        y = _this3.state.gameState.scene.height - Math.round((e.originalEvent.changedTouches[0].pageY - offset.top) / 2);
+
+        _this3.userInput.firing = true;
+        _this3.userInput.pointer = {
+          x: Math.max(0, Math.min(x, _this3.state.gameState.scene.width - _this3.state.gameState.ship.width)),
+          y: Math.max(0, Math.min(y, _this3.state.gameState.scene.height - _this3.state.gameState.ship.height))
+        };
+      });
+
+      $(document).on('mousemove.game', function (e) {
         var x, y;
         if (_this3._pointerLocked(e)) {
           var m = _this3._getPointerMovement(e.originalEvent);

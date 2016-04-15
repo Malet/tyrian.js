@@ -66,7 +66,19 @@ module.exports = class MainComponent extends React.Component {
     let domNode = ReactDOM.findDOMNode(this);
     let offset = $(domNode).offset();
 
-    $(document).on('mousemove.game touchmove.game', e => {
+    $(document).on('touchmove.game', e => {
+      var x, y;
+      x = Math.round((e.originalEvent.changedTouches[0].pageX - offset.left) / 2);
+      y = this.state.gameState.scene.height - Math.round((e.originalEvent.changedTouches[0].pageY - offset.top) / 2);
+
+      this.userInput.firing = true;
+      this.userInput.pointer = {
+        x: Math.max(0, Math.min(x, this.state.gameState.scene.width - this.state.gameState.ship.width)),
+        y: Math.max(0, Math.min(y, this.state.gameState.scene.height - this.state.gameState.ship.height))
+      };
+    });
+
+    $(document).on('mousemove.game', e => {
       var x, y;
       if (this._pointerLocked(e)) {
         let m = this._getPointerMovement(e.originalEvent);
