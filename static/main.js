@@ -303,12 +303,11 @@ module.exports = function (_React$Component) {
   _createClass(MainComponent, [{
     key: '_style',
     value: function _style() {
-      var isChrome = !!window.chrome && !!window.chrome.webstore;
       var style = {
         marginLeft: (window.innerWidth - viewScale * gameBounds.width) / 2 / viewScale
       };
 
-      if (isChrome) {
+      if ($.browser.webkit) {
         style.zoom = viewScale;
       } else {
         style.transform = 'scale(' + viewScale + ')';

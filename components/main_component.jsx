@@ -37,12 +37,11 @@ module.exports = class MainComponent extends React.Component {
   }
 
   _style() {
-    let isChrome = !!window.chrome && !!window.chrome.webstore;
     let style = {
       marginLeft: ((window.innerWidth - (viewScale * gameBounds.width)) / 2) / viewScale
     };
 
-    if (isChrome) {
+    if ($.browser.webkit) {
       style.zoom = viewScale;
     } else {
       style.transform = `scale(${viewScale})`;
