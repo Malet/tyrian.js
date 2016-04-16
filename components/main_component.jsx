@@ -13,6 +13,11 @@ let gameBounds = {
   height: 200
 };
 var viewScale = 2;
+var offset = {
+  left: 0,
+  top: 0
+};
+var doneRescale = false;
 
 module.exports = class MainComponent extends React.Component {
   constructor() {
@@ -74,6 +79,13 @@ module.exports = class MainComponent extends React.Component {
     </div>;
   }
 
+  componentDidUpdate() {
+    if (!doneRescale) {
+      this.rescale();
+      doneRescale = true;
+    }
+  }
+
   rescale() {
     viewScale = Math.min(
       window.innerWidth / gameBounds.width,
@@ -82,18 +94,20 @@ module.exports = class MainComponent extends React.Component {
   }
 
   componentDidMount() {
-    this.rescale();
-    let domNode = ReactDOM.findDOMNode(this);
-    let offset = $(domNode).offset();
-
     var resizeDebouncer;
+    let domNode = ReactDOM.findDOMNode(this);
+
     $(window).on('resize', (e) => {
       clearTimeout(resizeDebouncer);
-      resizeDebouncer = setTimeout(this.rescale, 100);
+      resizeDebouncer = setTimeout(this.rescale.bind(this), 100);
     });
 
     $(domNode).on('mousemove.game touchmove.game', e => {
       var x, y;
+      offset = $(domNode.childNodes[0].childNodes[0].childNodes[0]).offset();
+      offset.left = (offset.left + (this.state.gameState.ship.width / 2)) * viewScale;
+      offset.top = offset.top * viewScale;
+
       if (this._pointerLocked(e)) {
         let m = this._getPointerMovement(e.originalEvent);
         x = this.state.gameState.ship.x + m.movementX;

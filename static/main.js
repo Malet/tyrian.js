@@ -272,6 +272,11 @@ var gameBounds = {
   height: 200
 };
 var viewScale = 2;
+var offset = {
+  left: 0,
+  top: 0
+};
+var doneRescale = false;
 
 module.exports = function (_React$Component) {
   _inherits(MainComponent, _React$Component);
@@ -348,6 +353,14 @@ module.exports = function (_React$Component) {
       );
     }
   }, {
+    key: 'componentDidUpdate',
+    value: function componentDidUpdate() {
+      if (!doneRescale) {
+        this.rescale();
+        doneRescale = true;
+      }
+    }
+  }, {
     key: 'rescale',
     value: function rescale() {
       viewScale = Math.min(window.innerWidth / gameBounds.width, window.innerHeight / gameBounds.height);
@@ -357,18 +370,20 @@ module.exports = function (_React$Component) {
     value: function componentDidMount() {
       var _this2 = this;
 
-      this.rescale();
-      var domNode = ReactDOM.findDOMNode(this);
-      var offset = $(domNode).offset();
-
       var resizeDebouncer;
+      var domNode = ReactDOM.findDOMNode(this);
+
       $(window).on('resize', function (e) {
         clearTimeout(resizeDebouncer);
-        resizeDebouncer = setTimeout(_this2.rescale, 100);
+        resizeDebouncer = setTimeout(_this2.rescale.bind(_this2), 100);
       });
 
       $(domNode).on('mousemove.game touchmove.game', function (e) {
         var x, y;
+        offset = $(domNode.childNodes[0].childNodes[0].childNodes[0]).offset();
+        offset.left = (offset.left + _this2.state.gameState.ship.width / 2) * viewScale;
+        offset.top = offset.top * viewScale;
+
         if (_this2._pointerLocked(e)) {
           var m = _this2._getPointerMovement(e.originalEvent);
           x = _this2.state.gameState.ship.x + m.movementX;
@@ -1142,9 +1157,6 @@ var Game = function () {
   }, {
     key: '_progressLevel',
     value: function _progressLevel(state) {
-      // Run tick callbacks
-      // state.level.triggers[state..tickNum]
-
       var previousParallax = state.level.parallax;
       state.level.progress += 0.5;
       if (state.level.progress >= state.level.finishOn) {
