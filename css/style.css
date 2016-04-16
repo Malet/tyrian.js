@@ -6,14 +6,26 @@
 body {
   font-family: sans-serif;
   image-rendering: pixelated;
+  margin: 0;
+  background-color: black;
 }
 
 .spriteLoader {
   display: none;
 }
 
+.noselect {
+  -webkit-touch-callout: none; /* iOS Safari */
+  -webkit-user-select: none;   /* Chrome/Safari/Opera */
+  -khtml-user-select: none;    /* Konqueror */
+  -moz-user-select: none;      /* Firefox */
+  -ms-user-select: none;       /* IE/Edge */
+  user-select: none;
+  -webkit-tap-highlight-color: rgba(0, 0, 0, 0);
+}
+
 .game {
-  background: magenta;
+  background: black;
   position: relative;
   overflow: hidden;
   image-rendering: -moz-crisp-edges;
@@ -21,13 +33,7 @@ body {
   width: 320px;
   height: 200px;
 
-  /* Magnify for firefox */
-  transform: scale(2);
   transform-origin: top left;
-
-  /* Magnify for chrome */
-  -webkit-transform: none;
-  zoom: 2;
 }
 
 .enemiesContainer, .effectsContainer, .bulletsContainer {

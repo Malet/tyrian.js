@@ -267,6 +267,11 @@ var gameProps = {
   width: 263,
   height: 184
 };
+var gameBounds = {
+  width: 320,
+  height: 200
+};
+var viewScale = 2;
 
 module.exports = function (_React$Component) {
   _inherits(MainComponent, _React$Component);
@@ -291,6 +296,21 @@ module.exports = function (_React$Component) {
   }
 
   _createClass(MainComponent, [{
+    key: '_style',
+    value: function _style() {
+      var isChrome = !!window.chrome && !!window.chrome.webstore;
+      var style = {
+        marginLeft: (window.innerWidth - viewScale * gameBounds.width) / 2 / viewScale
+      };
+
+      if (isChrome) {
+        style.zoom = viewScale;
+      } else {
+        style.transform = 'scale(' + viewScale + ')';
+      }
+      return style;
+    }
+  }, {
     key: 'start',
     value: function start() {
       window.cancelAnimationFrame(this.lastAnimationFrame);
@@ -302,8 +322,6 @@ module.exports = function (_React$Component) {
   }, {
     key: 'render',
     value: function render() {
-      var _this2 = this;
-
       var game;
       if (this.loaded) {
         game = React.createElement(
@@ -311,20 +329,13 @@ module.exports = function (_React$Component) {
           null,
           React.createElement(
             'div',
-            { className: 'game' },
+            { className: 'game noselect', style: this._style() },
             React.createElement(SceneComponent, { game: this.state.gameState }),
             React.createElement(InterfaceComponent, {
               armor: this.state.gameState.ship.armor,
               shield: this.state.gameState.ship.shield
             })
-          ),
-          React.createElement(OptionsPanel, {
-            checked: this.state.godMode,
-            onChange: function onChange(_) {
-              _this2.state.godMode = !_this2.state.godMode;
-              _this2.setState(_this2.state);
-            }
-          })
+          )
         );
       } else {
         game = null;
@@ -337,79 +348,84 @@ module.exports = function (_React$Component) {
       );
     }
   }, {
+    key: 'rescale',
+    value: function rescale() {
+      viewScale = Math.min(window.innerWidth / gameBounds.width, window.innerHeight / gameBounds.height);
+    }
+  }, {
     key: 'componentDidMount',
     value: function componentDidMount() {
-      var _this3 = this;
+      var _this2 = this;
 
+      this.rescale();
       var domNode = ReactDOM.findDOMNode(this);
       var offset = $(domNode).offset();
 
-      $(document).on('touchmove.game', function (e) {
-        var x, y;
-        x = Math.round((e.originalEvent.changedTouches[0].pageX - offset.left) / 2);
-        y = _this3.state.gameState.scene.height - Math.round((e.originalEvent.changedTouches[0].pageY - offset.top) / 2);
-
-        _this3.userInput.firing = true;
-        _this3.userInput.pointer = {
-          x: Math.max(0, Math.min(x, _this3.state.gameState.scene.width - _this3.state.gameState.ship.width)),
-          y: Math.max(0, Math.min(y, _this3.state.gameState.scene.height - _this3.state.gameState.ship.height))
-        };
+      var resizeDebouncer;
+      $(window).on('resize', function (e) {
+        clearTimeout(resizeDebouncer);
+        resizeDebouncer = setTimeout(_this2.rescale, 100);
       });
 
-      $(document).on('mousemove.game', function (e) {
+      $(domNode).on('mousemove.game touchmove.game', function (e) {
         var x, y;
-        if (_this3._pointerLocked(e)) {
-          var m = _this3._getPointerMovement(e.originalEvent);
-          x = _this3.state.gameState.ship.x + m.movementX;
-          y = _this3.state.gameState.ship.y - m.movementY;
+        if (_this2._pointerLocked(e)) {
+          var m = _this2._getPointerMovement(e.originalEvent);
+          x = _this2.state.gameState.ship.x + m.movementX;
+          y = _this2.state.gameState.ship.y - m.movementY;
+        } else if (e.type === 'touchmove') {
+          x = Math.round((e.originalEvent.changedTouches[0].pageX - offset.left) / viewScale);
+          y = _this2.state.gameState.scene.height - Math.round((e.originalEvent.changedTouches[0].pageY - offset.top) / viewScale);
+          _this2.userInput.firing = true;
+          e.preventDefault();
         } else {
-          x = Math.round(e.pageX - offset.left);
-          y = _this3.state.gameState.scene.height - Math.round(e.pageY - offset.top);
+          x = Math.round((e.pageX - offset.left) / viewScale);
+          y = _this2.state.gameState.scene.height - Math.round((e.pageY - offset.top) / viewScale);
         }
 
-        _this3.userInput.pointer = {
-          x: Math.max(0, Math.min(x, _this3.state.gameState.scene.width - _this3.state.gameState.ship.width)),
-          y: Math.max(0, Math.min(y, _this3.state.gameState.scene.height - _this3.state.gameState.ship.height))
+        _this2.userInput.pointer = {
+          x: Math.max(0, Math.min(x, _this2.state.gameState.scene.width - _this2.state.gameState.ship.width)),
+          y: Math.max(0, Math.min(y, _this2.state.gameState.scene.height - _this2.state.gameState.ship.height))
         };
       });
 
       // Keyboard firing
       $(document).on('keydown.space', function (e) {
         if (e.keyCode == 32) {
-          _this3.userInput.firing = true;
+          _this2.userInput.firing = true;
         }
       });
       $(document).on('keyup.space', function (e) {
         if (e.keyCode == 32) {
-          _this3.userInput.firing = false;
+          _this2.userInput.firing = false;
         }
       });
 
       $(document).on('keypress.p', function (e) {
         if (e.keyCode == 112) {
-          _this3.userInput.paused = !_this3.userInput.paused;
-          if (!_this3.userInput.paused) {
-            _this3._tick();
+          _this2.userInput.paused = !_this2.userInput.paused;
+          if (!_this2.userInput.paused) {
+            _this2._tick();
           }
         }
       });
 
       $(document).on('keypress.r', function (e) {
         if (e.keyCode == 114) {
-          _this3.start();
+          _this2.start();
         }
       });
 
       // Mouse firing
       $(document).on('mousedown.fire', function (e) {
-        _this3.userInput.firing = true;
+        _this2.userInput.firing = true;
       });
       $(document).on('mouseup.fire', function (e) {
-        _this3.userInput.firing = false;
+        _this2.userInput.firing = false;
       });
 
       $(document).on('click.game', function (_) {
-        _this3._enablePointerLock();
+        _this2._enablePointerLock();
       });
     }
   }, {
@@ -1126,6 +1142,9 @@ var Game = function () {
   }, {
     key: '_progressLevel',
     value: function _progressLevel(state) {
+      // Run tick callbacks
+      // state.level.triggers[state..tickNum]
+
       var previousParallax = state.level.parallax;
       state.level.progress += 0.5;
       if (state.level.progress >= state.level.finishOn) {

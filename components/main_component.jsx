@@ -8,6 +8,11 @@ let gameProps = {
   width: 263,
   height: 184
 };
+let gameBounds = {
+  width: 320,
+  height: 200
+};
+var viewScale = 2;
 
 module.exports = class MainComponent extends React.Component {
   constructor() {
@@ -26,6 +31,20 @@ module.exports = class MainComponent extends React.Component {
     });
   }
 
+  _style() {
+    let isChrome = !!window.chrome && !!window.chrome.webstore;
+    let style = {
+      marginLeft: ((window.innerWidth - (viewScale * gameBounds.width)) / 2) / viewScale
+    };
+
+    if (isChrome) {
+      style.zoom = viewScale;
+    } else {
+      style.transform = `scale(${viewScale})`;
+    }
+    return style;
+  }
+
   start() {
     window.cancelAnimationFrame(this.lastAnimationFrame);
     this.state.game.reset(gameProps);
@@ -38,20 +57,13 @@ module.exports = class MainComponent extends React.Component {
     var game;
     if (this.loaded) {
       game = <div>
-        <div className="game">
+        <div className="game noselect" style={this._style()}>
           <SceneComponent game={this.state.gameState}/>
           <InterfaceComponent
             armor={this.state.gameState.ship.armor}
             shield={this.state.gameState.ship.shield}
             />
         </div>
-        <OptionsPanel
-          checked={this.state.godMode}
-          onChange={_ => {
-            this.state.godMode = !this.state.godMode;
-            this.setState(this.state);
-          }}
-          />
       </div>;
     } else {
       game = null;
@@ -62,31 +74,38 @@ module.exports = class MainComponent extends React.Component {
     </div>;
   }
 
+  rescale() {
+    viewScale = Math.min(
+      window.innerWidth / gameBounds.width,
+      window.innerHeight / gameBounds.height
+    );
+  }
+
   componentDidMount() {
+    this.rescale();
     let domNode = ReactDOM.findDOMNode(this);
     let offset = $(domNode).offset();
 
-    $(document).on('touchmove.game', e => {
-      var x, y;
-      x = Math.round((e.originalEvent.changedTouches[0].pageX - offset.left) / 2);
-      y = this.state.gameState.scene.height - Math.round((e.originalEvent.changedTouches[0].pageY - offset.top) / 2);
-
-      this.userInput.firing = true;
-      this.userInput.pointer = {
-        x: Math.max(0, Math.min(x, this.state.gameState.scene.width - this.state.gameState.ship.width)),
-        y: Math.max(0, Math.min(y, this.state.gameState.scene.height - this.state.gameState.ship.height))
-      };
+    var resizeDebouncer;
+    $(window).on('resize', (e) => {
+      clearTimeout(resizeDebouncer);
+      resizeDebouncer = setTimeout(this.rescale, 100);
     });
 
-    $(document).on('mousemove.game', e => {
+    $(domNode).on('mousemove.game touchmove.game', e => {
       var x, y;
       if (this._pointerLocked(e)) {
         let m = this._getPointerMovement(e.originalEvent);
         x = this.state.gameState.ship.x + m.movementX;
         y = this.state.gameState.ship.y - m.movementY;
+      } else if (e.type === 'touchmove') {
+        x = Math.round((e.originalEvent.changedTouches[0].pageX - offset.left) / viewScale);
+        y = this.state.gameState.scene.height - Math.round((e.originalEvent.changedTouches[0].pageY - offset.top) / viewScale);
+        this.userInput.firing = true;
+        e.preventDefault();
       } else {
-        x = Math.round(e.pageX - offset.left);
-        y = this.state.gameState.scene.height - Math.round(e.pageY - offset.top);
+        x = Math.round((e.pageX - offset.left) / viewScale);
+        y = this.state.gameState.scene.height - Math.round((e.pageY - offset.top) / viewScale);
       }
 
       this.userInput.pointer = {
