@@ -160,6 +160,7 @@ module.exports = class MainComponent extends React.Component {
 
     $(document).on('click.game', _ => {
       this._enablePointerLock();
+      this._enableFullScreen();
     });
   }
 
@@ -195,15 +196,22 @@ module.exports = class MainComponent extends React.Component {
       return {
         movementX: e.movementX,
         movementY: e.movementY
-      }
+      };
     } else {
       return {
         movementX: e.mozMovementX,
         movementY: e.mozMovementY
-      }
+      };
     }
   }
 
+  _enableFullScreen() {
+    if (!(document.fullscreenElement && document.mozFullScreenElement)) {
+      let el = ReactDOM.findDOMNode(this);
+      el.requestFullScreen = el.webkitRequestFullScreen || el.mozRequestFullScreen;
+      el.requestFullScreen();
+    }
+  }
   _enablePointerLock() {
     if (!document.pointerLockElement) {
       let el = ReactDOM.findDOMNode(this);

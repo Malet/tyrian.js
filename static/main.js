@@ -440,6 +440,7 @@ module.exports = function (_React$Component) {
 
       $(document).on('click.game', function (_) {
         _this2._enablePointerLock();
+        _this2._enableFullScreen();
       });
     }
   }, {
@@ -480,6 +481,15 @@ module.exports = function (_React$Component) {
           movementX: e.mozMovementX,
           movementY: e.mozMovementY
         };
+      }
+    }
+  }, {
+    key: '_enableFullScreen',
+    value: function _enableFullScreen() {
+      if (!(document.fullscreenElement && document.mozFullScreenElement)) {
+        var el = ReactDOM.findDOMNode(this);
+        el.requestFullScreen = el.webkitRequestFullScreen || el.mozRequestFullScreen;
+        el.requestFullScreen();
       }
     }
   }, {
