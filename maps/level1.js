@@ -13,18 +13,48 @@ let level = {
   events: {}
 };
 
+let addEvent = (tick, ...mutators) => {
+  level.events[tick] = level.events[tick] || [];
+  level.events[tick] = level.events[tick].concat(mutators);
+};
+
 for(var i = 1; i < 6; i++) {
-  level.events[i * 15] = state => {
-    return Level.addEnemy(
-      state,
-      new PaperclipEnemy(
-        state,
-        {
-          x: 200
-        }
-      )
-    );
-  }
+  // Central column
+  addEvent(
+    i * 15,
+    state => {
+      let paperclip = new PaperclipEnemy(state, {
+        x: state.level.centerGuide
+      });
+      paperclip.x -= paperclip.width / 2;
+      return Level.addEnemy(state, paperclip);
+    }
+  );
+
+  // Left column
+  addEvent(
+    (2 * 60) + i * 15,
+    state => {
+      let paperclip = new PaperclipEnemy(state, {
+        x: state.level.leftGuide,
+        direction: 'right'
+      });
+      return Level.addEnemy(state, paperclip);
+    }
+  );
+
+  // Right column
+  addEvent(
+    (4 * 60) + i * 15,
+    state => {
+      let paperclip = new PaperclipEnemy(state, {
+        x: state.level.rightGuide,
+        direction: 'left'
+      });
+      paperclip.x -= paperclip.width;
+      return Level.addEnemy(state, paperclip);
+    }
+  );
 }
 
 module.exports = level;

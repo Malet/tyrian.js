@@ -60,10 +60,16 @@ class Game {
 
     let width = levelData.mapWidth * levelData.tileWidth;
     let height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
+    let parallaxScale = 40;
+
+    this._state.level.leftGuide = parallaxScale;
+    this._state.level.rightGuide = this._state.scene.width;
+    this._state.level.centerGuide =
+      (this._state.level.rightGuide + this._state.level.leftGuide) / 2;
 
     Object.assign(this._state.level, {
       loaded: true,
-      parallaxScale: 40,
+      parallaxScale: parallaxScale,
       data: levelData,
       height: height,
       width: width,
@@ -72,6 +78,7 @@ class Game {
       events: levelData.events,
       finishOn: height - this._state.scene.height
     });
+
   }
 
   tick(userInput) {
@@ -320,7 +327,8 @@ class Game {
     state.effects = state.effects.map(parallaxShift);
 
     if (state.level.events.hasOwnProperty(state.tickNum)) {
-      state = state.level.events[state.tickNum](state);
+      state = state.level.events[state.tickNum]
+        .reduce((prevState, event) => event(prevState), state);
     }
 
     return state;

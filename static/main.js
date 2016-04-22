@@ -784,12 +784,43 @@ var level = {
   events: {}
 };
 
+var addEvent = function addEvent(tick) {
+  for (var _len = arguments.length, mutators = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    mutators[_key - 1] = arguments[_key];
+  }
+
+  level.events[tick] = level.events[tick] || [];
+  level.events[tick] = level.events[tick].concat(mutators);
+};
+
 for (var i = 1; i < 6; i++) {
-  level.events[i * 15] = function (state) {
-    return Level.addEnemy(state, new PaperclipEnemy(state, {
-      x: 200
-    }));
-  };
+  // Central column
+  addEvent(i * 15, function (state) {
+    var paperclip = new PaperclipEnemy(state, {
+      x: state.level.centerGuide
+    });
+    paperclip.x -= paperclip.width / 2;
+    return Level.addEnemy(state, paperclip);
+  });
+
+  // Left column
+  addEvent(2 * 60 + i * 15, function (state) {
+    var paperclip = new PaperclipEnemy(state, {
+      x: state.level.leftGuide,
+      direction: 'right'
+    });
+    return Level.addEnemy(state, paperclip);
+  });
+
+  // Right column
+  addEvent(4 * 60 + i * 15, function (state) {
+    var paperclip = new PaperclipEnemy(state, {
+      x: state.level.rightGuide,
+      direction: 'left'
+    });
+    paperclip.x -= paperclip.width;
+    return Level.addEnemy(state, paperclip);
+  });
 }
 
 module.exports = level;
@@ -833,22 +864,25 @@ function _inherits(subClass, superClass) { if (typeof superClass !== "function" 
 var BasicEnemy = require('./basic');
 
 module.exports = function (_BasicEnemy) {
-  _inherits(BounceLeftEnemy, _BasicEnemy);
+  _inherits(BounceEnemy, _BasicEnemy);
 
-  function BounceLeftEnemy(state, props) {
+  function BounceEnemy(state, props) {
     var _this, _ret;
 
-    _classCallCheck(this, BounceLeftEnemy);
+    _classCallCheck(this, BounceEnemy);
 
-    return _ret = Object.assign((_this = _possibleConstructorReturn(this, Object.getPrototypeOf(BounceLeftEnemy).call(this, state, props)), _this), {
+    return _ret = Object.assign((_this = _possibleConstructorReturn(this, Object.getPrototypeOf(BounceEnemy).call(this, state, props)), _this), {
       ascend: false,
+      direction: 'none',
       tick: function tick(state, enemy) {
         enemy.ascending = enemy.ascending || enemy.y + enemy.height <= 0;
         if (enemy.ascending) {
           // Normalise the vector(-1, -2)
-          var vector = { x: -1, y: 2 };
+          var vector = { x: 1, y: 2 };
+          vector.x *= { left: -1, right: 1 }[enemy.direction] || 0;
+
           var magnitude = Math.abs(vector.x) + Math.abs(vector.y);
-          enemy.speed = enemy.speed * 1.05;
+          enemy.speed = enemy.speed * 1.02;
           enemy.x += vector.x / magnitude * enemy.speed;
           enemy.y += vector.y / magnitude * enemy.speed;
         } else {
@@ -861,7 +895,7 @@ module.exports = function (_BasicEnemy) {
     }), _possibleConstructorReturn(_this, _ret);
   }
 
-  return BounceLeftEnemy;
+  return BounceEnemy;
 }(BasicEnemy);
 
 },{"./basic":13}],15:[function(require,module,exports){
@@ -873,26 +907,28 @@ function _possibleConstructorReturn(self, call) { if (!self) { throw new Referen
 
 function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
 
-var BounceLeftEnemy = require('./bounce_left');
+var BounceEnemy = require('./bounce');
 
-module.exports = function (_BounceLeftEnemy) {
-  _inherits(PaperclipEnemy, _BounceLeftEnemy);
+module.exports = function (_BounceEnemy) {
+  _inherits(PaperclipEnemy, _BounceEnemy);
 
   function PaperclipEnemy(state, props) {
     var _this, _ret;
 
     _classCallCheck(this, PaperclipEnemy);
 
-    return _ret = Object.assign((_this = _possibleConstructorReturn(this, Object.getPrototypeOf(PaperclipEnemy).call(this, state, props)), _this), {
+    return _ret = Object.assign((_this = _possibleConstructorReturn(this, Object.getPrototypeOf(PaperclipEnemy).call(this, state, {})), _this), {
       image: 'images/ships/paperclip.gif',
+      width: 15,
+      height: 19,
       speed: 1.5
-    }), _possibleConstructorReturn(_this, _ret);
+    }, props), _possibleConstructorReturn(_this, _ret);
   }
 
   return PaperclipEnemy;
-}(BounceLeftEnemy);
+}(BounceEnemy);
 
-},{"./bounce_left":14}],16:[function(require,module,exports){
+},{"./bounce":14}],16:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1001,10 +1037,15 @@ var Game = function () {
 
       var width = levelData.mapWidth * levelData.tileWidth;
       var height = Math.floor(levelData.tiles.length / levelData.mapWidth) * levelData.tileHeight;
+      var parallaxScale = 40;
+
+      this._state.level.leftGuide = parallaxScale;
+      this._state.level.rightGuide = this._state.scene.width;
+      this._state.level.centerGuide = (this._state.level.rightGuide + this._state.level.leftGuide) / 2;
 
       Object.assign(this._state.level, {
         loaded: true,
-        parallaxScale: 40,
+        parallaxScale: parallaxScale,
         data: levelData,
         height: height,
         width: width,
@@ -1255,7 +1296,9 @@ var Game = function () {
       state.effects = state.effects.map(parallaxShift);
 
       if (state.level.events.hasOwnProperty(state.tickNum)) {
-        state = state.level.events[state.tickNum](state);
+        state = state.level.events[state.tickNum].reduce(function (prevState, event) {
+          return event(prevState);
+        }, state);
       }
 
       return state;
