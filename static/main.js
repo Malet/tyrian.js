@@ -885,7 +885,7 @@ module.exports = function (_BounceLeftEnemy) {
 
     return _ret = Object.assign((_this = _possibleConstructorReturn(this, Object.getPrototypeOf(PaperclipEnemy).call(this, state, props)), _this), {
       image: 'images/ships/paperclip.gif',
-      speed: 2
+      speed: 1.5
     }), _possibleConstructorReturn(_this, _ret);
   }
 

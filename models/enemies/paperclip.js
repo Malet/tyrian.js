@@ -6,7 +6,7 @@ module.exports = class PaperclipEnemy extends BounceLeftEnemy {
       super(state, props),
       {
         image: 'images/ships/paperclip.gif',
-        speed: 2
+        speed: 1.5
       }
     )
   }
