@@ -2,6 +2,7 @@ let PublicState = require('../lib/public_state');
 let Ship = require('./ship');
 let Level = require('./level');
 let Promise = require('bluebird');
+let Enemy = require('./enemy');
 
 class Game {
   constructor(props) {
@@ -31,7 +32,7 @@ class Game {
     return {
       tickNum: 0,
       paused: false,
-      godMode: false,
+      godMode: true,
       levelEndedOn: null,
       ship: ship,
       bullets: [],
@@ -68,6 +69,7 @@ class Game {
       width: width,
       progress: 0,
       complete: false,
+      events: levelData.events,
       finishOn: height - this._state.scene.height
     });
   }
@@ -92,7 +94,6 @@ class Game {
       this._removeOutOfBounds,
       this._checkCollisions,
       this._removeOldEffects,
-      this._spawnEnemies,
       this._progressLevel
     ].reduce((state, mutator) => mutator.bind(this)(state), startState);
   }
@@ -101,12 +102,6 @@ class Game {
     if (state.tickNum % 30 == 0){
       state.ship.shield.current = Math.min(state.ship.shield.max, state.ship.shield.current + 3);
     }
-    return state;
-  }
-
-  _spawnEnemies(state) {
-    if (state.tickNum % 60 == 0)
-      return this._spawnEnemy(Math.random() * state.scene.width, state);
     return state;
   }
 
@@ -132,44 +127,6 @@ class Game {
     return state;
   }
 
-  _spawnEnemyBullet(x, y, state) {
-    let bullet = {
-      key: state.enemySeq++,
-      x: x,
-      y: y,
-      width: 7,
-      height: 7,
-      points: 0,
-      speed: 1,
-      collisionDamage: 5,
-      bullet: true,
-      image: 'images/bullets/enemy_bullet.gif',
-      tick: (bullet, state) => {
-        bullet.y += bullet.normalVector.y;
-        bullet.x += bullet.normalVector.x;
-
-        state.enemies[state.enemies.indexOf(bullet)] = bullet;
-
-        return state;
-      }
-    };
-
-    let target = { x: state.ship.x, y: state.ship.y };
-    let initial = { x: x, y: y };
-    let vector = {
-      x: target.x - initial.x,
-      y: target.y - initial.y
-    };
-    let distance = Math.sqrt(Math.pow(vector.x, 2) + Math.pow(vector.y, 2));
-    bullet.normalVector = {
-      x: vector.x / distance * bullet.speed,
-      y: vector.y / distance * bullet.speed
-    };
-
-    state.enemies.push(bullet);
-    return state;
-  }
-
   _spawnExplosion(x, y, w, h, state) {
     let newExplosion = {
       key: state.effectsSeq,
@@ -184,39 +141,6 @@ class Game {
 
     state.effects.push(newExplosion);
     state.effectsSeq += 1;
-    return state;
-  }
-
-  _spawnEnemy(x, state) {
-    let newEnemy = {
-      sinOffset: Math.random() * Math.PI * 2,
-      key: state.enemySeq,
-      x: x,
-      y: state.scene.height,
-      width: 22,
-      height: 25,
-      points: 100,
-      speed: 0.5,
-      collisionDamage: 1,
-      health: 10,
-      image: 'images/ships/Gencore_Phoenix.gif',
-      tick: (enemy, state) => {
-        enemy.y -= enemy.speed;
-        enemy.x += Math.sin((enemy.y / 20) + enemy.sinOffset) * enemy.speed;
-        state.enemies[state.enemies.indexOf(enemy)] = enemy;
-
-        if((state.tickNum + enemy.key) % 120 === 0) {
-          state = this._spawnEnemyBullet(
-            enemy.x + ( enemy.width / 2 ),
-            enemy.y + 7,
-            state
-          );
-        }
-        return state;
-      }
-    };
-    state.enemies.push(newEnemy);
-    state.enemySeq += 1;
     return state;
   }
 
@@ -401,6 +325,10 @@ class Game {
     state.enemies = state.enemies.map(parallaxShift);
     state.bullets = state.bullets.map(parallaxShift);
     state.effects = state.effects.map(parallaxShift);
+
+    if (state.level.events.hasOwnProperty(state.tickNum)) {
+      state = state.level.events[state.tickNum](state);
+    }
 
     return state;
   }
