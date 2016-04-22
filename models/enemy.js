@@ -15,7 +15,7 @@ module.exports = class Enemy {
         collisionDamage: 1,
         health: 10,
         image: 'images/ships/Gencore_Phoenix.gif',
-        tick: (enemy, state) => {
+        tick: (state, enemy) => {
           enemy.y -= enemy.speed;
           enemy.x += Math.sin((enemy.y / 20) + enemy.sinOffset) * enemy.speed;
           state.enemies[state.enemies.indexOf(enemy)] = enemy;

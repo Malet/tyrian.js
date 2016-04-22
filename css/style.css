@@ -157,7 +157,6 @@ body {
 
 .enemy {
   position: absolute;
-  transform: rotate(180deg);
 }
 
 .effect {

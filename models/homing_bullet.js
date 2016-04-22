@@ -17,7 +17,7 @@ module.exports = class HomingBullet {
       collisionDamage: 5,
       bullet: true,
       image: 'images/bullets/enemy_bullet.gif',
-      tick: (bullet, state) => {
+      tick: (state, bullet) => {
         bullet.y += bullet.normalVector.y;
         bullet.x += bullet.normalVector.x;
 

@@ -32,7 +32,7 @@ class Game {
     return {
       tickNum: 0,
       paused: false,
-      godMode: true,
+      godMode: false,
       levelEndedOn: null,
       ship: ship,
       bullets: [],
@@ -89,7 +89,6 @@ class Game {
       this._updateShipPosition,
       this._replenishShields,
       this._fireGun,
-      this._propelBullets,
       this._propelEnemies,
       this._removeOutOfBounds,
       this._checkCollisions,
@@ -113,7 +112,12 @@ class Game {
       width: 9,
       height: 23,
       speed: 5,
-      damage: 5
+      damage: 5,
+      tick: (state, bullet) => {
+        bullet.y += bullet.speed;
+        state.bullets[state.bullets.indexOf(bullet)] = bullet;
+        return state;
+      }
     };
 
     // Center the bullet from the ship
@@ -256,9 +260,9 @@ class Game {
   }
 
   _propelEnemies(state) {
-    return state.enemies.reduce(
+    return state.enemies.concat(state.bullets).reduce(
       (state, enemy) => {
-        return enemy.tick(enemy, state);
+        return enemy.tick(state, enemy);
       },
       state
     );
@@ -274,17 +278,6 @@ class Game {
       return !(outOfX || outOfY);
     });
     return state;
-  }
-
-  _propelBullets(state) {
-    let bullets = state.bullets
-      .map(bullet => {
-        bullet.y += bullet.speed;
-        return bullet;
-      })
-      .filter(bullet => bullet.y < state.scene.height);
-
-    return Object.assign(state, { bullets: bullets });
   }
 
   _fireGun(state) {
