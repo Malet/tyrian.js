@@ -170,13 +170,7 @@ module.exports = class MainComponent extends React.Component {
       this.state.gameState.level.complete ||
       this.userInput.paused
     ) {
-      // Deregister any click handlers etc
-      // $(document).off('click.game');
-      // $(document).off('mousemove.game');
-      // $(document).off('keydown.space');
-      // $(document).off('keyup.space');
-      // $(document).off('mousedown.fire');
-      // $(document).off('mouseup.fire');
+      // End of level logic
     } else {
       let newState = { gameState: this.state.game.tick(this.userInput).state };
       // let reactTickKey = `reactTick ${newState.tickNum}`;
