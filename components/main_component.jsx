@@ -129,14 +129,14 @@ module.exports = class MainComponent extends React.Component {
 
     // Keyboard firing
     $(document).on('keydown.space', e => {
-      if (e.keyCode == 32) { this.userInput.firing = true; }
+      if (e.keyCode == 32 || e.key === ' ') { this.userInput.firing = true; }
     });
     $(document).on('keyup.space', e => {
-      if (e.keyCode == 32) { this.userInput.firing = false; }
+      if (e.keyCode == 32 || e.key === ' ') { this.userInput.firing = false; }
     });
 
     $(document).on('keypress.p', e => {
-      if (e.keyCode == 112) {
+      if (e.keyCode == 112 || e.key === 'p') {
         this.userInput.paused = !this.userInput.paused;
         if (!this.userInput.paused) {
           this._tick();
@@ -145,7 +145,7 @@ module.exports = class MainComponent extends React.Component {
     });
 
     $(document).on('keypress.r', e => {
-      if (e.keyCode == 114) {
+      if (e.keyCode == 114 || e.key === 'r') {
         this.start();
       }
     });
