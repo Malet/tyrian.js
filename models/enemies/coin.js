@@ -1,17 +1,16 @@
-module.exports = class BasicEnemy {
+module.exports = class Coin {
   constructor(state, props) {
     return Object.assign(
       {
         x: 0,
         y: state.scene.height,
-        explode: true,
-        width: 22,
-        height: 25,
-        points: 100,
+        width: 11,
+        height: 11,
+        points: 50,
         speed: 0.5,
-        collisionDamage: 1,
-        health: 10,
-        image: 'images/ships/Gencore_Phoenix.gif',
+        collisionDamage: 0,
+        bullet: true,
+        image: 'images/coins/bronze.gif',
         tick: (state, enemy) => {
           enemy.y -= enemy.speed;
           state.enemies[state.enemies.indexOf(enemy)] = enemy;

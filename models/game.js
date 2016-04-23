@@ -2,7 +2,6 @@ let PublicState = require('../lib/public_state');
 let Ship = require('./ship');
 let Level = require('./level');
 let Promise = require('bluebird');
-let Enemy = require('./enemy');
 
 class Game {
   constructor(props) {
@@ -96,7 +95,7 @@ class Game {
       this._updateShipPosition,
       this._replenishShields,
       this._fireGun,
-      this._propelEnemies,
+      this._tickEnemies,
       this._removeOutOfBounds,
       this._checkCollisions,
       this._removeOldEffects,
@@ -168,9 +167,11 @@ class Game {
       if (this._collided(enemy, state.ship)) {
         if (enemy.bullet) { // Bullets are removed on collision
           enemyRemovalList.push(enemy);
-          newEffects.push(
-            state => this._spawnExplosion(enemy.x, enemy.y, null, null, state)
-          );
+          if (enemy.explode) {
+            newEffects.push(
+              state => this._spawnExplosion(enemy.x, enemy.y, null, null, state)
+            );
+          }
         }
 
         // Damage ship
@@ -188,7 +189,9 @@ class Game {
         }
 
         // TODO: Repel ship
-        this.sounds.shipDamage.play();
+        if (enemy.collisionDamage > 0) {
+          this.sounds.shipDamage.play();
+        }
       }
 
       // Check if a friendly bullet has hit an enemy
@@ -243,6 +246,9 @@ class Game {
     state.bullets = state.bullets
       .filter(bullet => bulletRemovalList.indexOf(bullet) === -1);
     newEffects.forEach(effect => state = effect(state));
+    state = enemyRemovalList
+      .reduce((prevState, enemy) => (enemy.onDestroy || (s => s))(state, enemy), state);
+
 
     return state;
   }
@@ -266,7 +272,7 @@ class Game {
     return x1[0] < x2[1] && x1[1] > x2[0];
   }
 
-  _propelEnemies(state) {
+  _tickEnemies(state) {
     return state.enemies.concat(state.bullets).reduce(
       (state, enemy) => {
         return enemy.tick(state, enemy);
@@ -279,7 +285,8 @@ class Game {
     state.enemies = state.enemies.filter(enemy => {
       let outOfX = (enemy.x > (state.scene.width + state.cullMargin)) ||
         ((enemy.x + enemy.width + state.cullMargin) < 0);
-      let outOfY = (enemy.y > (state.scene.height + state.cullMargin)) ||
+      // Give top boundary larger margin for spawning compound enemies
+      let outOfY = (enemy.y > (state.scene.height + state.cullMargin * 4)) ||
         ((enemy.y + enemy.height + state.cullMargin) < 0);
 
       return !(outOfX || outOfY);

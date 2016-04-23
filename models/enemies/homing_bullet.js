@@ -1,15 +1,12 @@
 module.exports = class HomingBullet {
   constructor(state, props) {
     return Object.assign(
-      this._initialObject(state, props),
-      props
+      this._initialObject(state, props)
     );
   }
 
   _initialObject(state, props) {
     let bullet = {
-      x: props.x,
-      y: props.y,
       width: 7,
       height: 7,
       points: 0,
@@ -27,8 +24,11 @@ module.exports = class HomingBullet {
       }
     };
 
+    bullet.x = props.x - (bullet.width / 2);
+    bullet.y = props.y - (bullet.height / 2);
+
     let target = { x: state.ship.x, y: state.ship.y };
-    let initial = { x: props.x, y: props.y };
+    let initial = { x: Number(bullet.x), y: Number(bullet.y) };
     let vector = {
       x: target.x - initial.x,
       y: target.y - initial.y

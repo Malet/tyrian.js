@@ -1,6 +1,7 @@
-var Enemy = require('../models/enemy');
+var SinEnemy = require('../models/enemies/sin');
 var BasicEnemy = require('../models/enemies/basic');
 var PaperclipEnemy = require('../models/enemies/paperclip');
+var Coin = require('../models/enemies/coin');
 var Level = require('../models/level');
 
 let level = {
@@ -20,6 +21,7 @@ let addEvent = (tick, ...mutators) => {
 
 for(var i = 1; i < 6; i++) {
   // Central column
+  let lambdaCounter = Number(i);
   addEvent(
     i * 15,
     state => {
@@ -27,6 +29,16 @@ for(var i = 1; i < 6; i++) {
         x: state.level.centerGuide
       });
       paperclip.x -= paperclip.width / 2;
+      if (lambdaCounter === 5) {
+        // Last one will drop a gem
+        paperclip.onDestroy = (state, enemy) => {
+          let newEnemy = new Coin(state, {
+            x: enemy.x + (state.level.parallax * state.level.parallaxScale),
+            y: enemy.y
+          });
+          return Level.addEnemy(state, newEnemy);
+        }
+      }
       return Level.addEnemy(state, paperclip);
     }
   );
@@ -55,6 +67,18 @@ for(var i = 1; i < 6; i++) {
       return Level.addEnemy(state, paperclip);
     }
   );
+
 }
+
+addEvent(
+  (2 * 60),
+  state => {
+    let enemy = new SinEnemy(state, {
+      x: state.level.centerGuide
+    });
+    enemy.x -= enemy.width / 2;
+    return Level.addEnemy(state, enemy);
+  }
+);
 
 module.exports = level;

@@ -1,7 +1,7 @@
 let HomingBullet = require('./homing_bullet');
-let Level = require('./level');
+let Level = require('../level');
 
-module.exports = class Enemy {
+module.exports = class SinEnemy {
   constructor(state, props) {
     return Object.assign(
       {
@@ -15,19 +15,20 @@ module.exports = class Enemy {
         collisionDamage: 1,
         health: 10,
         image: 'images/ships/Gencore_Phoenix.gif',
+        fireRate: 120,
         tick: (state, enemy) => {
           enemy.y -= enemy.speed;
           enemy.x += Math.sin((enemy.y / 20) + enemy.sinOffset) * enemy.speed;
           state.enemies[state.enemies.indexOf(enemy)] = enemy;
 
-          if ((state.tickNum + enemy.key) % 120 === 0) {
+          if ((state.tickNum + enemy.key) % enemy.fireRate === 0) {
             state = Level.addEnemy(
               state,
               new HomingBullet(
                 state,
                 {
-                  x: enemy.x + ( enemy.width / 2 ),
-                  y: enemy.y + 7
+                  x: enemy.x + (state.level.parallax * state.level.parallaxScale) + (enemy.width / 2),
+                  y: enemy.y + (enemy.height / 2)
                 }
               )
             );
