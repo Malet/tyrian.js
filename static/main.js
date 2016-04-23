@@ -763,7 +763,7 @@ $(window).load(function (_) {
 },{"./components/main_component.jsx":6,"jquery-browserify":50,"react":190,"react-dom":54}],12:[function(require,module,exports){
 'use strict';
 
-var SinEnemy = require('../models/enemies/sin');
+var AcornEnemy = require('../models/enemies/acorn');
 var BasicEnemy = require('../models/enemies/basic');
 var PaperclipEnemy = require('../models/enemies/paperclip');
 var Coin = require('../models/enemies/coin');
@@ -833,17 +833,85 @@ for (var i = 1; i < 6; i++) {
   _loop();
 }
 
-addEvent(2 * 60, function (state) {
-  var enemy = new SinEnemy(state, {
-    x: state.level.centerGuide
+addEvent(5 * 60, function (state) {
+  var enemy = new AcornEnemy(state, {
+    y: state.scene.height,
+    direction: 'right'
   });
-  enemy.x -= enemy.width / 2;
+  return Level.addEnemy(state, enemy);
+});
+
+addEvent(6 * 60, function (state) {
+  var enemy = new AcornEnemy(state, {
+    y: state.scene.height,
+    direction: 'left'
+  });
   return Level.addEnemy(state, enemy);
 });
 
 module.exports = level;
 
-},{"../models/enemies/basic":13,"../models/enemies/coin":15,"../models/enemies/paperclip":17,"../models/enemies/sin":18,"../models/level":20}],13:[function(require,module,exports){
+},{"../models/enemies/acorn":13,"../models/enemies/basic":14,"../models/enemies/coin":16,"../models/enemies/paperclip":18,"../models/level":20}],13:[function(require,module,exports){
+'use strict';
+
+function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
+
+function _possibleConstructorReturn(self, call) { if (!self) { throw new ReferenceError("this hasn't been initialised - super() hasn't been called"); } return call && (typeof call === "object" || typeof call === "function") ? call : self; }
+
+function _inherits(subClass, superClass) { if (typeof superClass !== "function" && superClass !== null) { throw new TypeError("Super expression must either be null or a function, not " + typeof superClass); } subClass.prototype = Object.create(superClass && superClass.prototype, { constructor: { value: subClass, enumerable: false, writable: true, configurable: true } }); if (superClass) Object.setPrototypeOf ? Object.setPrototypeOf(subClass, superClass) : subClass.__proto__ = superClass; }
+
+var BasicEnemy = require('./basic');
+var HomingBullet = require('./homing_bullet');
+var Level = require('../level');
+
+module.exports = function (_BasicEnemy) {
+  _inherits(AcornEnemy, _BasicEnemy);
+
+  function AcornEnemy(state, props) {
+    var _this, _ret;
+
+    _classCallCheck(this, AcornEnemy);
+
+    var acorn = Object.assign((_this = _possibleConstructorReturn(this, Object.getPrototypeOf(AcornEnemy).call(this, state)), _this), {
+      direction: 'right',
+      width: 25,
+      height: 23,
+      points: 100,
+      speed: 2,
+      collisionDamage: 1,
+      health: 10,
+      fireRate: 120,
+      tick: function tick(state, enemy) {
+        enemy.y -= state.level.speed;
+        enemy.x += {
+          left: -1,
+          right: 1
+        }[enemy.direction] * enemy.speed;
+        state.enemies[state.enemies.indexOf(enemy)] = enemy;
+
+        if ((state.tickNum + enemy.key) % enemy.fireRate === 0) {
+          state = Level.addEnemy(state, new HomingBullet(state, {
+            x: enemy.x + state.level.parallax * state.level.parallaxScale + enemy.width / 2,
+            y: enemy.y + enemy.height / 2
+          }));
+        }
+
+        return state;
+      }
+    }, props);
+    acorn.y = acorn.y || state.scene.height / 2;
+    acorn.x = acorn.x || {
+      left: state.scene.width + state.level.parallaxScale, right: -acorn.width
+    }[acorn.direction];
+    acorn.image = 'images/ships/acorn_' + acorn.direction + '.gif';
+
+    return _ret = acorn, _possibleConstructorReturn(_this, _ret);
+  }
+
+  return AcornEnemy;
+}(BasicEnemy);
+
+},{"../level":20,"./basic":14,"./homing_bullet":17}],14:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -871,7 +939,7 @@ module.exports = function BasicEnemy(state, props) {
   }, props);
 };
 
-},{}],14:[function(require,module,exports){
+},{}],15:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -917,7 +985,7 @@ module.exports = function (_BasicEnemy) {
   return BounceEnemy;
 }(BasicEnemy);
 
-},{"./basic":13}],15:[function(require,module,exports){
+},{"./basic":14}],16:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -944,7 +1012,7 @@ module.exports = function Coin(state, props) {
   }, props);
 };
 
-},{}],16:[function(require,module,exports){
+},{}],17:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1001,7 +1069,7 @@ module.exports = function () {
   return HomingBullet;
 }();
 
-},{}],17:[function(require,module,exports){
+},{}],18:[function(require,module,exports){
 'use strict';
 
 function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
@@ -1031,46 +1099,7 @@ module.exports = function (_BounceEnemy) {
   return PaperclipEnemy;
 }(BounceEnemy);
 
-},{"./bounce":14}],18:[function(require,module,exports){
-'use strict';
-
-function _classCallCheck(instance, Constructor) { if (!(instance instanceof Constructor)) { throw new TypeError("Cannot call a class as a function"); } }
-
-var HomingBullet = require('./homing_bullet');
-var Level = require('../level');
-
-module.exports = function SinEnemy(state, props) {
-  _classCallCheck(this, SinEnemy);
-
-  return Object.assign({
-    sinOffset: Math.random() * Math.PI * 2,
-    x: 0,
-    y: state.scene.height,
-    width: 22,
-    height: 25,
-    points: 100,
-    speed: 0.5,
-    collisionDamage: 1,
-    health: 10,
-    image: 'images/ships/Gencore_Phoenix.gif',
-    fireRate: 120,
-    tick: function tick(state, enemy) {
-      enemy.y -= enemy.speed;
-      enemy.x += Math.sin(enemy.y / 20 + enemy.sinOffset) * enemy.speed;
-      state.enemies[state.enemies.indexOf(enemy)] = enemy;
-
-      if ((state.tickNum + enemy.key) % enemy.fireRate === 0) {
-        state = Level.addEnemy(state, new HomingBullet(state, {
-          x: enemy.x + state.level.parallax * state.level.parallaxScale + enemy.width / 2,
-          y: enemy.y + enemy.height / 2
-        }));
-      }
-      return state;
-    }
-  }, props);
-};
-
-},{"../level":20,"./homing_bullet":16}],19:[function(require,module,exports){
+},{"./bounce":15}],19:[function(require,module,exports){
 'use strict';
 
 var _createClass = function () { function defineProperties(target, props) { for (var i = 0; i < props.length; i++) { var descriptor = props[i]; descriptor.enumerable = descriptor.enumerable || false; descriptor.configurable = true; if ("value" in descriptor) descriptor.writable = true; Object.defineProperty(target, descriptor.key, descriptor); } } return function (Constructor, protoProps, staticProps) { if (protoProps) defineProperties(Constructor.prototype, protoProps); if (staticProps) defineProperties(Constructor, staticProps); return Constructor; }; }();
@@ -1123,12 +1152,13 @@ var Game = function () {
         enemySeq: 0,
         effectsSeq: 0,
         points: 0,
-        cullMargin: 10,
+        cullMargin: 40,
         level: {
           loaded: false,
           progress: 0,
           complete: false,
-          parallax: 0
+          parallax: 0,
+          speed: 0.5
         },
         scene: props
       };
@@ -1391,7 +1421,7 @@ var Game = function () {
     key: '_progressLevel',
     value: function _progressLevel(state) {
       var previousParallax = state.level.parallax;
-      state.level.progress += 0.5;
+      state.level.progress += state.level.speed;
       if (state.level.progress >= state.level.finishOn) {
         state.level.complete = true;
       }

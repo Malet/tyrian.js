@@ -41,12 +41,13 @@ class Game {
       enemySeq: 0,
       effectsSeq: 0,
       points: 0,
-      cullMargin: 10,
+      cullMargin: 40,
       level: {
         loaded: false,
         progress: 0,
         complete: false,
-        parallax: 0
+        parallax: 0,
+        speed: 0.5
       },
       scene: props
     };
@@ -316,7 +317,7 @@ class Game {
 
   _progressLevel(state) {
     let previousParallax = state.level.parallax;
-    state.level.progress += 0.5;
+    state.level.progress += state.level.speed;
     if (state.level.progress >= state.level.finishOn) {
       state.level.complete = true;
     }

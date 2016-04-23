@@ -1,4 +1,4 @@
-var SinEnemy = require('../models/enemies/sin');
+var AcornEnemy = require('../models/enemies/acorn');
 var BasicEnemy = require('../models/enemies/basic');
 var PaperclipEnemy = require('../models/enemies/paperclip');
 var Coin = require('../models/enemies/coin');
@@ -67,16 +67,26 @@ for(var i = 1; i < 6; i++) {
       return Level.addEnemy(state, paperclip);
     }
   );
-
 }
 
 addEvent(
-  (2 * 60),
+  5 * 60,
   state => {
-    let enemy = new SinEnemy(state, {
-      x: state.level.centerGuide
+    let enemy = new AcornEnemy(state, {
+      y: state.scene.height,
+      direction: 'right'
     });
-    enemy.x -= enemy.width / 2;
+    return Level.addEnemy(state, enemy);
+  }
+);
+
+addEvent(
+  6 * 60,
+  state => {
+    let enemy = new AcornEnemy(state, {
+      y: state.scene.height,
+      direction: 'left'
+    });
     return Level.addEnemy(state, enemy);
   }
 );
