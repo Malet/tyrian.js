@@ -67,6 +67,74 @@ for(var i = 1; i < 6; i++) {
       return Level.addEnemy(state, paperclip);
     }
   );
+
+  addEvent(
+    (9 * 60) + i * 20,
+    state => {
+      let enemy = new AcornEnemy(state, {
+        y: state.scene.height,
+        direction: 'right'
+      });
+      return Level.addEnemy(state, enemy);
+    }
+  );
+
+  addEvent(
+    (9 * 60) + i * 20,
+    state => {
+      let enemy = new AcornEnemy(state, {
+        y: state.scene.height,
+        direction: 'left'
+      });
+      return Level.addEnemy(state, enemy);
+    }
+  );
+
+  addEvent(
+    (12 * 60) + i * 15,
+    state => {
+      let paperclip = new PaperclipEnemy(state, {
+        x: state.level.centerGuide
+      });
+      paperclip.x -= paperclip.width / 2;
+      if (lambdaCounter === 5) {
+        // Last one will drop a gem
+        paperclip.onDestroy = (state, enemy) => {
+          let newEnemy = new Coin(state, {
+            x: enemy.x + (state.level.parallax * state.level.parallaxScale),
+            y: enemy.y
+          });
+          return Level.addEnemy(state, newEnemy);
+        }
+      }
+      return Level.addEnemy(state, paperclip);
+    }
+  );
+
+  // Left column
+  addEvent(
+    (12 * 60) + i * 15,
+    state => {
+      let paperclip = new PaperclipEnemy(state, {
+        x: state.level.leftGuide,
+        direction: 'right'
+      });
+      return Level.addEnemy(state, paperclip);
+    }
+  );
+
+  // Right column
+  addEvent(
+    (12 * 60) + i * 15,
+    state => {
+      let paperclip = new PaperclipEnemy(state, {
+        x: state.level.rightGuide,
+        direction: 'left'
+      });
+      paperclip.x -= paperclip.width;
+      return Level.addEnemy(state, paperclip);
+    }
+  );
 }
 
 addEvent(
@@ -90,5 +158,20 @@ addEvent(
     return Level.addEnemy(state, enemy);
   }
 );
+
+// Speed up the level after 6 seconds
+for (var i = 1; i < 15; i++) {
+  addEvent((6 * 60) + i, state => {
+    state.level.speed = state.level.speed * 1.1;
+    return state;
+  });
+}
+
+for (var i = 1; i < 15; i++) {
+  addEvent((15 * 60) + i, state => {
+    state.level.speed = state.level.speed * 1.1;
+    return state;
+  });
+}
 
 module.exports = level;
